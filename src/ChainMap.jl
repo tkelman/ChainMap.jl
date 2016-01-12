@@ -3,7 +3,7 @@ import MacroTools
 export chain, @chain, lambda, @lambda, chain_map, @chain_map, map_all
 
 """
-Non-standard evaluation version of chain.
+Non-standard evaluation version of `chain`.
 """
 macro chain(exs...)
   esc(chain(exs...))
@@ -21,25 +21,18 @@ end
 """
     chain(x, ex)
 
-chain always substitutes the first argument into _ in the second. `chain(:a, :( -(b, _) )` returns `:( -(b, a) )`
+`chain` always substitutes `x` into `\_` in `ex`. `chain(:a, :( -(b, \_) )` returns `:( -(b, a) )`
 
-In addition, insertion of x to the first argument of ex is default. `chain(:a, :( +(b) )` returns `:( +(a, b) )`
+In addition, insertion of `x` to the first argument of `ex` is default. `chain(:a, :( +(b) )` returns `:( +(a, b) )`
 
-Insertion is overwriden in three ways:
+Insertion is overridden in three ways:
 
-1) If bare `_` is an argument to ex.
+1) If bare `\_` is an argument to `ex`.
 See the first example
 
-2) If ex is a block.
-     chain :a quote
-                b = 1
-                -(b, _)
-              end
-will translate to `:(-(b, a))`
+2) If `ex` is a block. `chain(:a, quote b = 1; -(b, \_) end)` will translate to `:(-(b, a))`
 
-3) If ex is a lambda.
-    chain(:a, :(x -> x + _) )
-will translate to `:(x -> x + a)`
+3) If `ex` is a lambda. `chain(:a, :(x -> x + \_) )` will translate to `:(x -> x + a)`
 """
 function chain(x, ex)
   # bare function calls
@@ -71,7 +64,7 @@ end
 """
     chain(x, exs...)
 
-Reduce chain over `(x, exs...)`
+Reduce `chain` over `(x, exs...)`
 """
 function chain(x, exs...)
   reduce(chain, x, exs)
@@ -80,11 +73,11 @@ end
 """
     lambda(ex...)
 
-Will chain together ex... expressions using chain rules above.
-Then, an anonymous function is constructed, with _ being the input varible.
+Will chain together `ex...` expressions using `chain` rules above.
+Then, an anonymous function is constructed, with `\_` being the input varible.
 The input variable may or may not be inserted as the first argument of the first expression.
-`lambda(:(+(1)), :(+(2)))` will return `:(_ -> +(+(_, 1), 2))` and
-`lambda(:(+(1)), :(+(2)))` will return `:(_ -> +(+(1, _), 2))`
+`lambda(:(-(1, \_)), :(+(2)))` will return `:(\_ -> +(-(1, \_), 2))` and
+`lambda(:(-(1)), :(+(2)))` will return `:(\_ -> +(-(\_, 1), 2))`
 """
 function lambda(ex)
   x = gensym()
@@ -102,7 +95,7 @@ function lambda(exs...)
 end
 
 """
-Non-standard evaluation version of lambda
+Non-standard evaluation version of `lambda`
 """
 macro lambda(exs...)
   esc(lambda(exs...))
@@ -111,15 +104,15 @@ end
 """
     chain_map(x, exs...)
 
-will build the code for an anoymous function by chaining together exs using lambda,
-then build a map expression for mapping that function over x.
+will build the code for an anoymous function by chaining together `exs...` using `lambda`,
+then build a map expression for mapping that function over `x`.
 """
 chain_map = function(x, exs...)
   Expr(:call, :map, ChainMap.lambda(exs...), x)
 end
 
 """
-Non-standard evaluation version of chain_map.
+Non-standard evaluation version of `chain_map`.
 """
 macro chain_map(exs...)
   esc(chain_map(exs...))
@@ -128,8 +121,8 @@ end
 """
     map_all(As, f)
 
-A wrapper for broadcast that is chain-friendly.
-As is a tuple of items to be broadcast over, and f is a function.
+A wrapper for `broadcast` that is chain-friendly.
+`As` is a tuple of items to be `broadcast` over, and `f` is a function.
 """
 function map_all(As, f)
   broadcast(f, As...)
