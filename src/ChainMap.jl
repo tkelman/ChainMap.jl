@@ -1,6 +1,18 @@
 module ChainMap
-import MacroTools
+import MacroTools, Base.replace
 export chain, @chain, lambda, @lambda, chain_map, @chain_map, map_all
+
+function replace_recur(ex, pat, r)
+  if ex == pat
+    r
+  elseif typeof(ex) <: Expr
+    ex.head = ex.head == pat ? r : ex.head
+    ex.args = map(x -> replace_recur(x, pat, r), ex.args)
+    ex
+  else
+    ex
+  end
+end
 
 """
 Non-standard evaluation version of `chain`.
@@ -21,16 +33,16 @@ end
 """
     chain(x, ex)
 
-`chain` always substitutes `x` into `\_` in `ex`. `chain(:a, :( -(b, \_) )` returns `:( -(b, a) )`
+`chain` always substitutes `x` into `\_` in `ex`. `chain(:a, :( -(b, \_) ) )` returns `:( -(b, a) )`
 
-In addition, insertion of `x` to the first argument of `ex` is default. `chain(:a, :( +(b) )` returns `:( +(a, b) )`
+In addition, insertion of `x` to the first argument of `ex` is default. `chain(:a, :( +(b) ) )` returns `:( +(a, b) )`
 
 Insertion is overridden in three ways:
 
 1) If bare `\_` is an argument to `ex`.
 See the first example
 
-2) If `ex` is a block. `chain(:a, quote b = 1; -(b, \_) end)` will translate to `:(-(b, a))`
+2) If `ex` is a block. `chain(:a, quote b = 1; -(b, \_) end)` will translate to `:( quote b = 1; -(b, a) end )`
 
 3) If `ex` is a lambda. `chain(:a, :(x -> x + \_) )` will translate to `:(x -> x + a)`
 """
@@ -40,22 +52,16 @@ function chain(x, ex)
     Expr(:call, ex, x)
   # substitution only
   elseif (:_ in ex.args) | MacroTools.isexpr(ex,  :->, :block)
-    :(let _ = $x
-        $ex
-      end)
+    replace_recur(ex, :_, x)
   # insertion and substitution for non-functions
   elseif MacroTools.isexpr(ex, :vect, :tuple)
     ex_insert = Expr(ex.head, x, ex.args...)
-    :(let _ = $x
-        $ex_insert
-      end)
+    replace_recur(ex_insert, :_, x)
   # insertion and substitution for function calls
   elseif MacroTools.isexpr(ex, :call, :macrocall)
     ex_insert = Expr(ex.head, ex.args[1],
                      x, ex.args[2:end]...)
-    :(let _ = $x
-        $ex_insert
-      end)
+    replace_recur(ex_insert, :_, x)
   else
     error("Unsupported expression $ex")
   end
@@ -74,7 +80,7 @@ end
     lambda(ex...)
 
 Will chain together `ex...` expressions using `chain` rules above.
-Then, an anonymous function is constructed, with `\_` being the input varible.
+Then, an anonymous function is constructed, with \_ as an input varible.
 The input variable may or may not be inserted as the first argument of the first expression.
 `lambda(:(-(1, \_)), :(+(2)))` will return `:(\_ -> +(-(1, \_), 2))` and
 `lambda(:(-(1)), :(+(2)))` will return `:(\_ -> +(-(\_, 1), 2))`
