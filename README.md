@@ -27,7 +27,7 @@ Here is a short example to illustrate the different kind of things you can do wi
 end
 ```
 
-Here is a short list of exported objects and what they do:
+Here is a short list of exported objects and what they do. See docstrings for more information about each function.
 
     Function        Description
     ---------------------------------------------------------
