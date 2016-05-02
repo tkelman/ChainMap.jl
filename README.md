@@ -26,3 +26,15 @@ Here is a short example to illustrate the different kind of things you can do wi
   sum
 end
 ```
+
+Here is a short list of exported objects and what they do:
+
+    Function        Description
+    ---------------------------------------------------------
+    @chain          Chain functions
+    @lambda         Chain functions, then turn into a lambda
+    @chain          Chain functions, then map over an object
+    chain           Standard evaluation version of `@chain`
+    lambda          Standard evaluation version of `@lambda`
+    chain_map       Standard evaluation version of `@chain_map`
+    map_all         Chain friendly version of `broadcast`
