@@ -1,24 +1,24 @@
 module ChainMap
 import MacroTools
-export chain, @chain, lambda, @lambda, chain_map, @chain_map, map_all
+export chain, @>, lambda, @f, chain_map, @.>, map_all
 
 """
-    @chain x
+    @> x
 
 Separate single blocks out into lines and recur, return single non-blocks.
 
-    @chain begin
+    @> begin
              1
              +(1)
            end
 
-is the same as `@chain 1 +(1)`
+is the same as `@> 1 +(1)`
 
-    @chain x ex
+    @> x ex
 
-`@chain` always substitutes `x` into `\_` in `ex`. `@chain 1 -(2, \_)` returns `-(2, 1)`
+`@>` always substitutes `x` into `\_` in `ex`. `@> 1 -(2, \_)` returns `-(2, 1)`
 
-In addition, insertion of `x` to the first argument of `ex` is default. `@chain 1 +(1)` returns `+(1, 1)`
+In addition, insertion of `x` to the first argument of `ex` is default. `@> 1 +(1)` returns `+(1, 1)`
 
 Insertion is overridden in three ways:
 
@@ -27,7 +27,7 @@ See the first example
 
 - If `ex` is a block.
 
-    @chain 1 begin
+    @> 1 begin
                b = 2
                -(b, \_)
              end
@@ -39,13 +39,13 @@ will translate to
       -(b, 1)
     end
 
-- If `ex` is a lambda. `@chain 1, x -> x + \_` will translate to `x -> x + 1`
+- If `ex` is a lambda. `@> 1, x -> x + \_` will translate to `x -> x + 1`
 
-    @chain x exs...
+    @> x exs...
 
-Reduce `@chain` over `(x, exs...)`. `@chain 1 +1 +1` is the same as +(+(1, 1), 1)
+Reduce `@>` over `(x, exs...)`. `@> 1 +1 +1` is the same as +(+(1, 1), 1)
 """
-macro chain(exs...)
+macro >(exs...)
   esc(chain(exs...))
 end
 
@@ -54,7 +54,7 @@ end
     chain(x, ex)
     chain(x, exs...)
 
-Standard evaluation version of `@chain`.
+Standard evaluation version of `@>`.
 """
 function chain(x)
   MacroTools.isexpr(x, :block) ? chain(MacroTools.rmlines(x).args...) : x
@@ -95,7 +95,7 @@ end
     lambda(ex)
     lambda(exs...)
 
-Standard evaluation version of `@lambda`.
+Standard evaluation version of `@f`.
 """
 function lambda(ex)
   x = gensym()
@@ -113,34 +113,34 @@ function lambda(exs...)
 end
 
 """
-    @lambda ex...
+    @f ex...
 
 Will chain together `ex...` expressions using `chain` rules above.
 Then, an anonymous function is constructed, with \_ as an input varible.
 The input variable may or may not be inserted as the first argument of the first expression.
-`@lambda -(2, \_)` will return `\_ -> -(2, \_)` and
-`@lambda +(1)` will return `\_ -> +(\_, 1)`
+`@f -(2, \_)` will return `\_ -> -(2, \_)` and
+`@f +(1)` will return `\_ -> +(\_, 1)`
 """
-macro lambda(exs...)
+macro f(exs...)
   esc(lambda(exs...))
 end
 
 """
     chain_map(x, exs...)
 
-Standard evaluation version of `@chain_map`.
+Standard evaluation version of `@.>`.
 """
 chain_map = function(x, exs...)
   Expr(:call, :map, ChainMap.lambda(exs...), x)
 end
 
 """
-    @chain_map x exs...
+    @.> x exs...
 
-will build an anoymous function by chaining together `exs...` using `@lambda`,
+will build an anoymous function by chaining together `exs...` using `@f`,
 then map that function over `x`.
 """
-macro chain_map(exs...)
+macro .>(exs...)
   esc(chain_map(exs...))
 end
 
