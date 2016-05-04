@@ -29,12 +29,9 @@ end
 
 Here is a short list of exported objects and what they do. See docstrings for more information about each function.
 
-    Function        Description
-    ---------------------------------------------------------
-    @chain          Chain functions
-    @lambda         Chain functions, then turn into a lambda
-    @chain_map      Chain functions, then map over an object
-    chain           Standard evaluation version of @chain
-    lambda          Standard evaluation version of @lambda
-    chain_map       Standard evaluation version of @chain_map
-    map_all         Chain friendly version of broadcast
+    Macro    Standard evaluation version    Description
+    ----------------------------------------------------------------------------
+    @>       chain                          Chain functions
+    @f       lambda                         Chain then turn into a lambda
+    @.>      chain_map                      Chain then map over an object
+             map_all                        Chain friendly version of broadcast
