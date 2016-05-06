@@ -8,12 +8,12 @@ The chaining code owes heavily to one-more-minute/Lazy.jl.
 Here is a short example to illustrate the different kind of things you can do with this package.
 
 ```{julia}
-@chain begin
+@> begin
   [1, 2]
   -(1)
   (_, _)
   map_all(+)
-  @chain_map begin
+  @.> begin
     -(1)
     float
     ^(2, _)
