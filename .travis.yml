@@ -4,9 +4,11 @@ os:
   - linux
   - osx
 julia:
-  - release
-  allow_failures:
-    - nightly
+  matrix:
+    include:
+      - release
+    allow_failures:
+      - nightly
 notifications:
   email: false
 script:
