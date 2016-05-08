@@ -5,6 +5,8 @@ os:
   - osx
 julia:
   - release
+  allowed:
+    -nightly
 notifications:
   email: false
 script:
