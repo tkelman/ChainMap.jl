@@ -10,7 +10,7 @@ The chaining code owes heavily to one-more-minute/Lazy.jl.
 Here is a short example to illustrate the different kind of things you can do with this package.
 
 ```{julia}
-@>
+@> begin
  [1, 2]
  (_, _)
  @.>> begin
