@@ -27,11 +27,13 @@ Here is a short example to illustrate the different kind of things you can do wi
 end
 ```
 
-Here is a short list of exported objects and what they do. See docstrings for more information about each function.
+Here is a short list of exported objects and what they do. See docstrings for
+more information about each function.
 
     Macro    Standard evaluation version    Description
     ----------------------------------------------------------------------------
     @>       chain                          Chain functions
     @f       lambda                         Chain then turn into a lambda
+    @fs      lambda(multi = true)           Chain then turn into a lambda that gathers arguments into a tuple
     @.>      chain_map                      Chain then map over an object
-             map_all                        Chain friendly version of broadcast
+    @.>>     chain_map_all                        Chain friendly version of broadcast
