@@ -36,4 +36,4 @@ more information about each function.
     @f       lambda                         Chain then turn into a lambda
     @fs      lambda(multi = true)           Chain then turn into a lambda that gathers arguments into a tuple
     @.>      chain_map                      Chain then map over an object
-    @.>>     chain_map_all                        Chain friendly version of broadcast
+    @.>>     chain_map(multi = true)        Chain then map over several objects in a tuple
