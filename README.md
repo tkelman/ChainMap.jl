@@ -10,22 +10,20 @@ The chaining code owes heavily to one-more-minute/Lazy.jl.
 Here is a short example to illustrate the different kind of things you can do with this package.
 
 ```{julia}
-@> begin
-  [1, 2]
-  -(1)
-  (_, _)
-  map_all(+)
-  @.> begin
-    -(1)
-    float
-    ^(2, _)
-  end
-  begin
-    a = _ - 1
-    b = _ + 1
-    [a, b]
-  end
-  sum
+@>
+ [1, 2]
+ (_, _)
+ @.>> begin
+   +(_...)
+   -(1)
+   ^(2, _)
+ end
+ begin
+   a = _ - 1
+   b = _ + 1
+   [a, b]
+ end
+ sum
 end
 ```
 

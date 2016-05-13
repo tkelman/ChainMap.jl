@@ -1,6 +1,6 @@
 module ChainMap
 import MacroTools
-export chain, @>, lambda, @f, chain_map, @.>, map_all
+export chain, @>, lambda, @f, @fs, chain_map, @.>, chain_map_all, @.>>
 
 """
     @> x
@@ -22,7 +22,7 @@ In addition, insertion of `x` to the first argument of `ex` is default. `@> 1 +(
 
 Insertion is overridden in three ways:
 
-- If bare `\_` is an argument to `ex`.
+- If bare `\_` or `\_...` is an argument to `ex`.
 See the first example
 
 - If `ex` is a block.
@@ -46,7 +46,7 @@ will translate to
 Reduce `@>` over `(x, exs...)`. `@> 1 +1 +1` is the same as +(+(1, 1), 1)
 """
 macro >(exs...)
-  esc(chain(exs...))
+  esc( chain(exs...) )
 end
 
 """
@@ -63,9 +63,11 @@ end
 function chain(x, ex)
   # bare function calls
   if MacroTools.isexpr(ex, Symbol)
-    Expr(:call, ex, x)
-  # substitution only
-  elseif (:_ in ex.args) | MacroTools.isexpr(ex,  :->, :block)
+    :( $ex($x) )
+  # substitution only for bare _ and _...
+  elseif (:_ in ex.args) |
+           (Expr(:..., :_) in ex.args) |
+           MacroTools.isexpr(ex,  :->, :block)
     :(let _ = $x
         $ex
       end)
@@ -92,24 +94,29 @@ function chain(x, exs...)
 end
 
 """
-    lambda(ex)
-    lambda(exs...)
+    lambda(exs..., multi = false)
 
-Standard evaluation version of `@f`.
+Standard evaluation version of `@f`. If multi is set to true, stadard evaluation
+version of `@fs`
 """
-function lambda(ex)
+function lambda(exs...; multi = false)
+
   x = gensym()
 
-  ex_chain = MacroTools.isexpr(ex, :block) ?
-    ChainMap.chain( Expr(ex.head, x, ex.args...) ) :
-    ChainMap.chain( x, ex)
+  if length(exs) == 1 & MacroTools.isexpr(exs[1], :block)
+    # insert x into block then chain
+    ex = exs[1]
+    x_chain = chain( Expr(ex.head, x, ex.args...) )
+  else
+    # regular chaining
+    x_chain = chain(x, exs...)
+  end
 
-  Expr(:->, x, ex_chain)
-end
-
-function lambda(exs...)
-  x = gensym()
-  Expr(:->, x, ChainMap.chain(x, exs...))
+  if multi
+    Expr( :->, Expr(:..., x), x_chain )
+  else
+    Expr( :->, x, x_chain )
+  end
 end
 
 """
@@ -118,20 +125,39 @@ end
 Will chain together `ex...` expressions using `chain` rules above.
 Then, an anonymous function is constructed, with \_ as an input varible.
 The input variable may or may not be inserted as the first argument of the first expression.
-`@f -(2, \_)` will return `\_ -> -(2, \_)` and
+
+`@f -(2, \_)` will return `\_ -> -(2, \_)`
 `@f +(1)` will return `\_ -> +(\_, 1)`
 """
 macro f(exs...)
-  esc(lambda(exs...))
+  esc( lambda(exs...) )
 end
 
 """
-    chain_map(x, exs...)
+    @fs ex...
 
-Standard evaluation version of `@.>`.
+Same as `@f`, except arguments are passed in as a tuple to the anonymous function.
+
+`@fs +(_...)` will return `function (\_...) +(\_...) end`
 """
-chain_map = function(x, exs...)
-  Expr(:call, :map, ChainMap.lambda(exs...), x)
+macro fs(exs...)
+  esc( lambda(exs..., multi = true) )
+end
+
+"""
+    chain_map(x, exs...; multi = false)
+
+Standard evaluation version of `@>`.
+"""
+function chain_map(x, exs...; multi = false)
+  f = lambda(exs..., multi = multi)
+
+  if multi
+    :( broadcast($f, $x...) )
+  else
+    :( broadcast($f, $x) )
+  end
+
 end
 
 """
@@ -139,19 +165,24 @@ end
 
 will build an anoymous function by chaining together `exs...` using `@f`,
 then map that function over `x`.
+
+`@.> [1, 2] +(1)` will return `[1+1, 2+1]`
 """
 macro .>(exs...)
-  esc(chain_map(exs...))
+  esc(chain_map(exs...) )
 end
 
 """
-    map_all(As, f)
+    @.>> xs exs...
 
-A wrapper for `broadcast` that is chain-friendly.
-`As` is a tuple of items to be `broadcast` over, and `f` is a function.
+will build an anoymous function by chaining together `exs...` using `@fs`,
+then broadcast that function over `xs...`. It is as if zipped tuples are passed
+in to the function.
+
+`@.>> ( [1, 2], [3, 4] ) +(_...)` will return `[1+3, 2+4]`
 """
-function map_all(As, f)
-  broadcast(f, As...)
+macro .>>(exs...)
+  esc( chain_map(exs..., multi = true) )
 end
 
 end

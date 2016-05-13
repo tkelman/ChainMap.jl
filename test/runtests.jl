@@ -13,6 +13,13 @@ end
 
 Test.@test test_chain == 4
 
+test_more = ChainMap.@> begin
+  (1, 2)
+  +(_...)
+end
+
+Test.@test test_more == 3
+
 test_function = ChainMap.@f begin
   +(1)
   +(2)
@@ -20,16 +27,20 @@ end
 
 Test.@test test_function(1) == 4
 
+test_function_multi = ChainMap.@fs begin
+  +(_...)
+end
+
+Test.@test test_function_multi(1, 2) == 3
+
 test_map = ChainMap.@> begin
   1
   x -> x^2 + _
   map([1, 2])
 end
 
-Test.@test test_map == [2, 5]
-
-map_test = ChainMap.@.> [1,2] +(1) +(2)
-Test.@test map_test == [4, 5]
+map_test = ChainMap.@.>> ([1, 2], [3, 4]) +(_...)
+Test.@test map_test == [4, 6]
 
 map_test_block = ChainMap.@.> [1,2] begin
   +(1)
@@ -38,10 +49,6 @@ end
 
 Test.@test map_test_block == [4, 5]
 
-function plus(x, y) x + y end
-
-map_all_test = ChainMap.map_all( ([1,2], [2, 4]) , plus )
-Test.@test map_all_test == [3, 6]
 
 errror =
   try
@@ -58,3 +65,22 @@ chain_tuple = ChainMap.@> begin
 end
 
 Test.@test chain_tuple == (1, 2, 3)
+
+
+readme = ChainMap.@> begin
+  [1, 2]
+  (_, _)
+  ChainMap.@.>> begin
+    +(_...)
+    -(1)
+    ^(2, _)
+  end
+  begin
+    a = _ - 1
+    b = _ + 1
+    [a, b]
+  end
+  sum
+end
+
+Test.@test readme == 20
