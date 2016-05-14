@@ -28,9 +28,9 @@ See the first example
 - If `ex` is a block.
 
     @> 1 begin
-               b = 2
-               -(b, \_)
-             end
+           b = 2
+           -(b, \_)
+         end
 
 will translate to
 
@@ -147,7 +147,8 @@ end
 """
     chain_map(x, exs...; multi = false)
 
-Standard evaluation version of `@>`.
+Standard evaluation version of `@.>`. If multi is set to true, standard
+evaluation version of `@.>>`
 """
 function chain_map(x, exs...; multi = false)
   f = lambda(exs..., multi = multi)
