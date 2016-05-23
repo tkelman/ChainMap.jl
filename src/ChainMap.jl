@@ -1,6 +1,6 @@
 module ChainMap
 import MacroTools
-export chain, @c, lambda, @lambda, over, @over
+export chain, @c, lambda, @l, over, @o
 
 """
     @c x
