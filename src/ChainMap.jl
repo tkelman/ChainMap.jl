@@ -129,8 +129,6 @@ macro l(exs...)
   esc( lambda(exs...) )
 end
 
-@l 1
-
 replace_record!(e, d) = (e, d)
 function replace_record!(e::Expr, d)
   if ( e.head == :call ) & ( length(e.args) == 2 ) & ( e.args[1] == :~ )
