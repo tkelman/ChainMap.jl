@@ -11,20 +11,16 @@ The chaining code owes heavily to one-more-minute/Lazy.jl.
 Here is a short example to illustrate the different kind of things you can do with this package.
 
 ```{julia}
-@> begin
- [1, 2]
- (_, _)
- @.>> begin
-   +(_...)
-   -(1)
-   ^(2, _)
- end
- begin
-   a = _ - 1
-   b = _ + 1
-   [a, b]
- end
- sum
+@o @c begin
+  ~[1, 2]
+  -(1)
+  ^(2, _)
+  begin
+    a = _ - 1
+    b = _ + 1
+    (a, b)
+  end
+  sum
 end
 ```
 
@@ -33,8 +29,6 @@ more information about each function.
 
     Macro    Standard evaluation version    Description
     ----------------------------------------------------------------------------
-    @>       chain                          Chain functions
-    @f       lambda                         Chain then turn into a lambda
-    @fs      lambda(multi = true)           Chain then turn into a lambda that gathers arguments into a tuple
-    @.>      chain_map                      Chain then map over an object
-    @.>>     chain_map(multi = true)        Chain then map over several objects in a tuple
+    @c       chain                          Chain functions
+    @l       lambda                         Chain then turn into a lambda
+    @o       over                           Broadcast expression over tildad objects

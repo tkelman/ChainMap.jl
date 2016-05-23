@@ -1,24 +1,25 @@
 module ChainMap
 import MacroTools
-export chain, @>, lambda, @f, @fs, chain_map, @.>, chain_map_all, @.>>
+export chain, @c, lambda, @lambda, over, @over
 
 """
-    @> x
+    @c x
 
 Separate single blocks out into lines and recur, return single non-blocks.
 
-    @> begin
+    @c begin
              1
              +(1)
            end
 
-is the same as `@> 1 +(1)`
+is the same as `@c 1 +(1)`
 
-    @> x ex
+    @c x ex
 
-`@>` always substitutes `x` into `\_` in `ex`. `@> 1 -(2, \_)` returns `-(2, 1)`
+`@c` always substitutes `x` into `\_` in `ex`. `@c 1 -(2, \_)` returns `-(2, 1)`
 
-In addition, insertion of `x` to the first argument of `ex` is default. `@> 1 +(1)` returns `+(1, 1)`
+In addition, insertion of `x` to the first argument of `ex` is default.
+`@c 1 +(1)` returns `+(1, 1)`
 
 Insertion is overridden in three ways:
 
@@ -27,7 +28,7 @@ See the first example
 
 - If `ex` is a block.
 
-    @> 1 begin
+    @c 1 begin
            b = 2
            -(b, \_)
          end
@@ -39,13 +40,13 @@ will translate to
       -(b, 1)
     end
 
-- If `ex` is a lambda. `@> 1, x -> x + \_` will translate to `x -> x + 1`
+- If `ex` is a lambda. `@c 1 x -> x + \_` will translate to `x -> x + 1`
 
-    @> x exs...
+    @c x exs...
 
-Reduce `@>` over `(x, exs...)`. `@> 1 +1 +1` is the same as +(+(1, 1), 1)
+Reduce `@c` over `(x, exs...)`. `@c 1 +1 +1` is the same as +(+(1, 1), 1)
 """
-macro >(exs...)
+macro c(exs...)
   esc( chain(exs...) )
 end
 
@@ -54,7 +55,7 @@ end
     chain(x, ex)
     chain(x, exs...)
 
-Standard evaluation version of `@>`.
+Standard evaluation version of `@c`.
 """
 function chain(x)
   MacroTools.isexpr(x, :block) ? chain(MacroTools.rmlines(x).args...) : x
@@ -64,7 +65,7 @@ function chain(x, ex)
   # bare function calls
   if MacroTools.isexpr(ex, Symbol)
     :( $ex($x) )
-  # substitution only for bare _ and _...
+  # substitution only for bare _ and _..., blocks, and lambdas
   elseif (:_ in ex.args) |
            (Expr(:..., :_) in ex.args) |
            MacroTools.isexpr(ex,  :->, :block)
@@ -94,13 +95,11 @@ function chain(x, exs...)
 end
 
 """
-    lambda(exs..., multi = false)
+    lambda(exs...)
 
-Standard evaluation version of `@f`. If multi is set to true, stadard evaluation
-version of `@fs`
+Standard evaluation version of `@l`.
 """
-function lambda(exs...; multi = false)
-
+function lambda(exs...)
   x = gensym()
 
   if length(exs) == 1 & MacroTools.isexpr(exs[1], :block)
@@ -112,78 +111,103 @@ function lambda(exs...; multi = false)
     x_chain = chain(x, exs...)
   end
 
-  if multi
-    Expr( :->, Expr(:..., x), x_chain )
-  else
-    Expr( :->, x, x_chain )
-  end
+  Expr( :->, x, x_chain )
 end
 
 """
-    @f ex...
+    @l ex...
 
 Will chain together `ex...` expressions using `chain` rules above.
 Then, an anonymous function is constructed, with \_ as an input varible.
-The input variable may or may not be inserted as the first argument of the first expression.
+The input variable may or may not be inserted as the first argument of the first
+expression.
 
-`@f -(2, \_)` will return `\_ -> -(2, \_)`
-`@f +(1)` will return `\_ -> +(\_, 1)`
+`@l -(2, \_)` will return `\_ -> -(2, \_)`
+`@l +(1)` will return `\_ -> +(\_, 1)`
 """
-macro f(exs...)
+macro l(exs...)
   esc( lambda(exs...) )
 end
 
-"""
-    @fs ex...
+@l 1
 
-Same as `@f`, except arguments are passed in as a tuple to the anonymous function.
-
-`@fs +(_...)` will return `function (\_...) +(\_...) end`
-"""
-macro fs(exs...)
-  esc( lambda(exs..., multi = true) )
+replace_record!(e, d) = (e, d)
+function replace_record!(e::Expr, d)
+  if ( e.head == :call ) & ( length(e.args) == 2 ) & ( e.args[1] == :~ )
+    key = e.args[2]
+    if !(haskey(d, key) )
+      if MacroTools.isexpr(key, :...)
+        d[key] = Expr(:..., gensym() )
+      else
+        d[key] = gensym()
+      end
+    end
+    e = d[key]
+  else
+    e.args = map(e -> replace_record!(e, d)[1], MacroTools.rmlines(e.args) )
+  end
+  (e, d)
 end
 
 """
-    chain_map(x, exs...; multi = false)
+    over(e)
 
-Standard evaluation version of `@.>`. If multi is set to true, standard
-evaluation version of `@.>>`
+Standard evalution version of `@o`
 """
-function chain_map(x, exs...; multi = false)
-  f = lambda(exs..., multi = multi)
+function over(e)
+  d = Dict()
+  replace_record!(e, d)
 
-  if multi
-    :( broadcast($f, $x...) )
-  else
-    :( broadcast($f, $x) )
+  dotted = filter((k, v) -> MacroTools.isexpr(k, :...), d)
+  undotted = filter((k, v) -> !(MacroTools.isexpr(k, :...)), d)
+
+  if length(dotted) > 1
+    error("Cannot map over more than one splatted argument")
   end
 
+  Expr(:call, :broadcast,
+       Expr(:->,
+            Expr(:tuple,
+                 values(undotted)... ,
+                 values(dotted)...) ,
+            e),
+       keys(undotted)... ,
+       keys(dotted)... )
 end
 
 """
-    @.> x exs...
+    @o e
 
-will build an anoymous function by chaining together `exs...` using `@f`,
-then map that function over `x`.
+Interprets e as a function to map with, and expressions wrapped with tilda as
+objects to broadcast over.
 
-`@.> [1, 2] +(1)` will return `[1+1, 2+1]`
+Let `a = [1, 2]`, `b = [3, 4]`, `c = ( [5, 6], [7, 8] )`, `d = 9`
+
+`@o +(~a + ~a + ~b)` = `[1 + 1 + 3, 2 + 2 + 4]`
+
+Objects do not have to be the same size.
+
+`@o +(~a, ~d)` = `[1 + 9, 2 + 9]`
+
+You can also map over splatted arguments.
+
+`@o +(~a + ~(c...) )` = `( [1 + 5 + 7], [2, + 6 + 8] )`
+
+Make multi-line functions by wrapping in blocks
+
+    @o begin
+         e = ~a
+         e + 1
+       end
+
+yields `[2, 3]`
+
+Tildad expressions do not have to be named.
+
+`@o +( ~[1, 2], ~[3, 4] )` = `[1 + 3, 2 + 4]`
 """
-macro .>(exs...)
-  esc(chain_map(exs...) )
-end
-
-"""
-    @.>> xs exs...
-
-will build an anoymous function by chaining together `exs...` using `@fs`,
-then broadcast that function over `xs...`. It is as if zipped tuples are passed
-in to the function.
-
-`@.>> ( [1, 2], [3, 4] ) +(_...)` will return `[1+3, 2+4]`
-"""
-macro .>>(exs...)
-  esc( chain_map(exs..., multi = true) )
+macro o(e)
+  esc( over(e) )
 end
 
 end
