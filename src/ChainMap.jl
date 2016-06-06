@@ -183,7 +183,7 @@ Objects do not have to be the same size.
 
 You can also map over splatted arguments.
 
-`@o +(~a + ~(c...) )` = `( [1 + 5 + 7], [2, + 6 + 8] )`
+`@o ~a + ~(c...)` = `( [1 + 5 + 7], [2, + 6 + 8] )`
 
 Make multi-line functions by wrapping in blocks
 
