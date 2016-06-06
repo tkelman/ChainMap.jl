@@ -1,6 +1,6 @@
-using ChainMap
+import ChainMap
 
-test_chain = @c begin
+test_chain = ChainMap.@c begin
   1
   +(1)
   +(_, 1)
@@ -13,25 +13,25 @@ end
 
 Test.@test test_chain == 4
 
-test_more = @c begin
+test_more = ChainMap.@c begin
   (1, 2)
   +(_...)
 end
 
 Test.@test test_more == 3
 
-test_function = @l begin
+test_function = ChainMap.@l begin
   +(1)
   +(2)
 end
 
 Test.@test test_function(1) == 4
 
-test_chain_function = @l -(2, _) +(1)
+test_chain_function = ChainMap.@l -(2, _) +(1)
 
 Test.@test test_chain_function(1) == 2
 
-test_map = @c begin
+test_map = ChainMap.@c begin
   1
   x -> x^2 + _
   map([1, 2])
@@ -39,7 +39,7 @@ end
 
 Test.@test test_map == [2, 5]
 
-both = @o @c begin
+both = ChainMap.@o ChainMap.@c begin
   ~[1,2]
   +(1)
   +(2)
@@ -49,14 +49,14 @@ Test.@test both == [4, 5]
 
 errror =
   try
-    chain(1, :(import ChainMap ))
+    ChainMap.chain(1, :(import ChainMap ))
   catch x
     x
   end
 
 Test.@test errror.msg == "Unsupported expression import ChainMap"
 
-chain_tuple = @c begin
+chain_tuple = ChainMap.@c begin
   1
   (2, 3)
 end
@@ -64,7 +64,7 @@ end
 Test.@test chain_tuple == (1, 2, 3)
 
 
-readme = @o @c begin
+readme = ChainMap.@o ChainMap.@c begin
   ~[1, 2]
   -(1)
   ^(2, _)
@@ -79,14 +79,14 @@ end
 Test.@test readme == [2, 4]
 
 a = ( [1, 2], [3, 4] )
-dots_test = @o +( ~(a...) )
+dots_test = ChainMap.@o +( ~(a...) )
 Test.@test dots_test == [4, 6]
 
 b = ( [5, 6], [7, 8] )
 
 errrror =
   try
-    over( :( +( ~(a...), ~(b...) ) ) )
+    ChainMap.over( :( +( ~(a...), ~(b...) ) ) )
   catch x
     x
   end

@@ -69,22 +69,16 @@ function chain(x, ex)
   elseif (:_ in ex.args) |
            (Expr(:..., :_) in ex.args) |
            MacroTools.isexpr(ex,  :->, :block)
-    :(let _ = $x
-        $ex
-      end)
+    :(let _ = $x; $ex; end)
   # insertion and substitution for non-functions
   elseif MacroTools.isexpr(ex, :vect, :tuple)
     ex_insert = Expr(ex.head, x, ex.args...)
-    :(let _ = $x
-        $ex_insert
-      end)
+    :(let _ = $x; $ex_insert; end)
   # insertion and substitution for function calls
   elseif MacroTools.isexpr(ex, :call, :macrocall)
     ex_insert = Expr(ex.head, ex.args[1],
                      x, ex.args[2:end]...)
-    :(let _ = $x
-        $ex_insert
-      end)
+    :(let _ = $x; $ex_insert; end)
   else
     error("Unsupported expression $ex")
   end
