@@ -5,54 +5,6 @@ export chain, @c, lambda, @l, over, @o, bitnot
 bitnot = ~
 
 """
-    @c x
-
-Separate single blocks out into lines and recur, return single non-blocks.
-
-    @c begin
-             1
-             +(1)
-           end
-
-is the same as `@c 1 +(1)`
-
-    @c x ex
-
-`@c` always substitutes `x` into `\_` in `ex`. `@c 1 -(2, \_)` returns `-(2, 1)`
-
-In addition, insertion of `x` to the first argument of `ex` is default.
-`@c 1 +(1)` returns `+(1, 1)`
-
-Insertion is overridden in three ways:
-
-- If bare `\_` or `\_...` is an argument to `ex`.
-See the first example
-
-- If `ex` is a block.
-
-    @c 1 begin
-           b = 2
-           -(b, \_)
-         end
-
-will translate to
-
-    begin
-      b = 2
-      -(b, 1)
-    end
-
-- If `ex` is a lambda. `@c 1 x -> x + \_` will translate to `x -> x + 1`
-
-    @c x exs...
-
-Reduce `@c` over `(x, exs...)`. `@c 1 +1 +1` is the same as +(+(1, 1), 1)
-"""
-macro c(exs...)
-  esc( chain(exs...) )
-end
-
-"""
     chain(x)
     chain(x, ex)
     chain(x, exs...)
@@ -91,6 +43,54 @@ function chain(x, exs...)
 end
 
 """
+    @c x
+
+Separate single blocks out into lines and recur, return single non-blocks.
+
+    @c begin
+         1
+         +(1)
+       end
+
+is the same as `@c 1 +(1)`
+
+    @c x ex
+
+`@c` always substitutes `x` into `\_` in `ex`. `@c 1 -(2, \_)` returns `-(2, 1)`
+
+In addition, insertion of `x` to the first argument of `ex` is default.
+`@c 1 +(1)` returns `+(1, 1)`
+
+Insertion is overridden in three ways:
+
+- If bare `\_` or `\_...` is an argument to `ex`.
+See the first example
+
+- If `ex` is a block.
+
+    @c 1 begin
+           b = 2
+           -(b, \_)
+         end
+
+will translate to
+
+    begin
+      b = 2
+      -(b, 1)
+    end
+
+- If `ex` is a lambda. `@c 1 x -> x + \_` will translate to `x -> x + 1`
+
+    @c x exs...
+
+Reduce `@c` over `(x, exs...)`. `@c 1 -(2) +(3)` is the same as +(-(1, 2), 3)
+"""
+macro c(exs...)
+  esc( chain(exs...) )
+end
+
+"""
     lambda(exs...)
 
 Standard evaluation version of `@l`.
@@ -113,10 +113,10 @@ end
 """
     @l ex...
 
-Will chain together `ex...` expressions using `chain` rules above.
+Will chain together `ex...` expressions using `@c` rules above.
 Then, an anonymous function is constructed, with \_ as an input varible.
 The input variable may or may not be inserted as the first argument of the first
-expression.
+expression, again based on `@c` rules.
 
 `@l -(2, \_)` will return `\_ -> -(2, \_)`
 `@l +(1)` will return `\_ -> +(\_, 1)`
@@ -189,7 +189,7 @@ Objects do not have to be the same size.
 
 You can also map over splatted arguments.
 
-`@o ~a + ~(c...)` = `( [1 + 5 + 7], [2, + 6 + 8] )`
+`@o ~a + ~(c...)` = `( [1 + 5 + 7], [2 + 6 + 8] )`
 
 Make multi-line functions by wrapping in blocks
 
@@ -204,7 +204,7 @@ Tildad expressions do not have to be named.
 
 `@o +( ~[1, 2], ~[3, 4] )` = `[1 + 3, 2 + 4]`
 
-To use `~` as a function, use the alias `binnot`
+To use `~` as a function, use the alias `bitnot`
 """
 macro o(e)
   esc( over(e) )
