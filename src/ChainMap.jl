@@ -2,6 +2,12 @@ module ChainMap
 import MacroTools
 export chain, @c, lambda, @l, over, @o, bitnot
 
+
+"""
+    bitnot
+
+Alias for `~` for use within `@o`
+"""
 bitnot = ~
 
 """
