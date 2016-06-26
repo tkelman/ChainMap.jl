@@ -1,5 +1,10 @@
 import ChainMap
 
+Test.@test (ChainMap.@o 1) == 1
+
+Test.@test ChainMap.bitnot(1) == -2
+
+
 test_chain = ChainMap.@c begin
   1
   +(1)

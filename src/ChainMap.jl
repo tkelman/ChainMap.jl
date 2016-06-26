@@ -1,6 +1,8 @@
 module ChainMap
 import MacroTools
-export chain, @c, lambda, @l, over, @o
+export chain, @c, lambda, @l, over, @o, bitnot
+
+bitnot = ~
 
 """
     @c x
@@ -150,6 +152,10 @@ function over(e)
   d = Dict()
   replace_record!(e, d)
 
+  if length(d) == 0
+    return e
+  end
+
   dotted = filter((k, v) -> MacroTools.isexpr(k, :...), d)
   undotted = filter((k, v) -> !(MacroTools.isexpr(k, :...)), d)
 
@@ -197,6 +203,8 @@ yields `[2, 3]`
 Tildad expressions do not have to be named.
 
 `@o +( ~[1, 2], ~[3, 4] )` = `[1 + 3, 2 + 4]`
+
+To use `~` as a function, use the alias `binnot`
 """
 macro o(e)
   esc( over(e) )
