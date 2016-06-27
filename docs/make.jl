@@ -1,9 +1,3 @@
-```@contents
-```
+using Documenter, ChainMap
 
-```@autodocs
-Modules = [ChainMap]
-```
-
-```@index
-```
+makedocs()
