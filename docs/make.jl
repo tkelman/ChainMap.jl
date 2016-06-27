@@ -1,3 +1,0 @@
-using Documenter, ChainMap
-
-makedocs()
