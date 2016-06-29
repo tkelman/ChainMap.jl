@@ -32,12 +32,12 @@ function chain(x, ex)
     :(let _ = $x; $ex; end)
   # insertion and substitution for non-functions
   elseif MacroTools.isexpr(ex, :vect, :tuple)
-    ex_insert = Expr(ex.head, x, ex.args...)
+    ex_insert = Expr(ex.head, :_, ex.args...)
     :(let _ = $x; $ex_insert; end)
   # insertion and substitution for function calls
   elseif MacroTools.isexpr(ex, :call, :macrocall)
     ex_insert = Expr(ex.head, ex.args[1],
-                     x, ex.args[2:end]...)
+                     :_, ex.args[2:end]...)
     :(let _ = $x; $ex_insert; end)
   else
     error("Unsupported expression $ex")
@@ -97,38 +97,32 @@ macro c(exs...)
 end
 
 """
-    lambda(exs...)
+lambda_block(exs...)
 
-Standard evaluation version of `@l`.
+Standard evaluation version of `@lb`
 """
-function lambda(exs...)
+function lambda_block(exs...)
   x = gensym()
-
-  if length(exs) == 1 & MacroTools.isexpr(exs[1], :block)
-    # insert x into block then chain
-    ex = exs[1]
-    x_chain = chain( Expr(ex.head, x, ex.args...) )
-  else
-    # regular chaining
-    x_chain = chain(x, exs...)
-  end
-
+  x_chain = chain(x, exs...)
   Expr( :->, x, x_chain )
 end
 
 """
-    @l ex...
+    lambda(x)
 
-Will chain together `ex...` expressions using `@c` rules above.
-Then, an anonymous function is constructed, with \_ as an input varible.
-The input variable may or may not be inserted as the first argument of the first
-expression, again based on `@c` rules.
+Standard evaluation version of `@l`.
+"""
+lambda(x) = Expr( :->, :_, x)
+
+"""
+    @l x
+
+An anonymous function is constructed, with \_ as an input varible.
 
 `@l -(2, \_)` will return `\_ -> -(2, \_)`
-`@l +(1)` will return `\_ -> +(\_, 1)`
 """
-macro l(exs...)
-  esc( lambda(exs...) )
+macro l(x)
+  esc( lambda(x) )
 end
 
 replace_record!(e, d) = (e, d)

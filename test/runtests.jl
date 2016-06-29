@@ -25,14 +25,24 @@ end
 
 Test.@test test_more == 3
 
-test_function = ChainMap.@l begin
-  +(1)
+_ = 1
+
+test_ = ChainMap.@c begin
+  _
+  +(_, 1)
+  +(2)
+end
+
+Test.@test test_ == 4
+
+test_function = ChainMap.@l ChainMap.@c begin
+  +(_, 1)
   +(2)
 end
 
 Test.@test test_function(1) == 4
 
-test_chain_function = ChainMap.@l -(2, _) +(1)
+test_chain_function = ChainMap.@l ChainMap.@c -(2, _) +(1)
 
 Test.@test test_chain_function(1) == 2
 
@@ -69,8 +79,8 @@ end
 Test.@test chain_tuple == (1, 2, 3)
 
 
-readme = ChainMap.@o ChainMap.@c begin
-  ~[1, 2]
+readme = ChainMap.@l ChainMap.@o ChainMap.@c begin
+  ~_
   -(1)
   ^(2, _)
   begin
@@ -81,7 +91,7 @@ readme = ChainMap.@o ChainMap.@c begin
   sum
 end
 
-Test.@test readme == [2, 4]
+Test.@test readme([1, 2]) == [2, 4]
 
 a = ( [1, 2], [3, 4] )
 dots_test = ChainMap.@o +( ~(a...) )
@@ -97,3 +107,8 @@ errrror =
   end
 
 Test.@test errrror.msg == "Cannot map over more than one splatted argument"
+
+test_lb = ChainMap.@l begin
+      a = _ + 1
+      a + 2
+    end
