@@ -97,17 +97,6 @@ macro c(exs...)
 end
 
 """
-lambda_block(exs...)
-
-Standard evaluation version of `@lb`
-"""
-function lambda_block(exs...)
-  x = gensym()
-  x_chain = chain(x, exs...)
-  Expr( :->, x, x_chain )
-end
-
-"""
     lambda(x)
 
 Standard evaluation version of `@l`.
