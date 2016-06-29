@@ -106,7 +106,7 @@ lambda(x) = Expr( :->, :_, x)
 """
     @l x
 
-An anonymous function is constructed, with \_ as an input varible.
+An anonymous function is constructed, with `_` as an input varible.
 
 `@l -(2, \_)` will return `\_ -> -(2, \_)`
 """
