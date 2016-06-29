@@ -32,5 +32,5 @@ more information about each function.
     Macro    Standard evaluation    Description
     ----------------------------------------------------------------------------
     @c       chain                  Chain functions
-    @l       lambda                 Turn into a lambda with \_ as the input variable
+    @l       lambda                 Turn into a lambda with _ as the input variable
     @o       over                   Broadcast expression over tildad objects
