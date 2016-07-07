@@ -245,7 +245,7 @@ that the same keyword arguments are present ignoring order.
 """
 ==(a::Arguments, b::Arguments) =
   (a.positional == b.positional) &
-  length(symdiff(a.keyword, b.keyword) == 0)
+  (length(symdiff(a.keyword, b.keyword) ) == 0)
 
 """
      run(a::Arguments, f

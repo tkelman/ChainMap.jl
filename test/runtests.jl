@@ -107,7 +107,7 @@ test1 = ChainMap.Arguments(1, 2, a = 3, b = 4)
 test2 = ChainMap.push(test1, 5, 6, c = 5, d = 6)
 Test.@test test2 == ChainMap.Arguments((1,2,5,6),Any[(:a,3),(:b,4),(:c,5),(:d,6)])
 
-function test_function(a, b, c; d = 4)
+function test_function_2(a, b, c; d = 4)
   a - b + c - d
 end
 
@@ -116,7 +116,7 @@ test_arguments = ChainMap.@c begin
   ChainMap.Arguments()
   ChainMap.push(2, d = 2)
   ChainMap.unshift(3)
-  ChainMap.run(test_function)
+  ChainMap.run(test_function_2)
 end
 
-Test.@test test_arguments == test_function(3, 1, 2; d = 2)
+Test.@test test_arguments == test_function_2(3, 1, 2; d = 2)
