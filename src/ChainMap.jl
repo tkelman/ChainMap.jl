@@ -1,7 +1,8 @@
 module ChainMap
 import MacroTools
+import Base.==
+import Base.run
 export chain, @c, lambda, @l, over, @o, bitnot
-
 
 """
     bitnot
@@ -10,43 +11,40 @@ Alias for `~` for use within `@o`
 """
 bitnot = ~
 
+insert(x) = :( $x(_) )
+function insert(e::Expr)
+  e = e
+  site = e.head in [:call, :macrocall] ? 2 : 1
+  insert!(e.args, site, :_)
+  e
+end
+
+incommon(x, y) = length( intersect(x, y) ) > 0
+
+matchexpr(e, heads, args) = false
+matchexpr(e::Expr, heads, args) =
+  (e.head in heads) | incommon(e.args, args )
+
+maybeinsert(e) =
+  matchexpr( e, [:->, :block] ,
+                [:_, Expr(:..., :_) ] ) ?
+  e : insert(e)
+
+expose(tail, head) = :(let _ = $head; $tail; end)
+
 """
     chain(x)
-    chain(x, ex)
+    chain(head, tail)
     chain(x, exs...)
 
 Standard evaluation version of `@c`.
 """
-function chain(x)
-  MacroTools.isexpr(x, :block) ? chain(MacroTools.rmlines(x).args...) : x
-end
+chain(single) =
+  MacroTools.isexpr(single, :block) ?
+  chain(MacroTools.rmlines(single).args...) : single
 
-function chain(x, ex)
-  # bare function calls
-  if MacroTools.isexpr(ex, Symbol)
-    :( $ex($x) )
-  # substitution only for bare _ and _..., blocks, and lambdas
-  elseif (:_ in ex.args) |
-           (Expr(:..., :_) in ex.args) |
-           MacroTools.isexpr(ex,  :->, :block)
-    :(let _ = $x; $ex; end)
-  # insertion and substitution for non-functions
-  elseif MacroTools.isexpr(ex, :vect, :tuple)
-    ex_insert = Expr(ex.head, :_, ex.args...)
-    :(let _ = $x; $ex_insert; end)
-  # insertion and substitution for function calls
-  elseif MacroTools.isexpr(ex, :call, :macrocall)
-    ex_insert = Expr(ex.head, ex.args[1],
-                     :_, ex.args[2:end]...)
-    :(let _ = $x; $ex_insert; end)
-  else
-    error("Unsupported expression $ex")
-  end
-end
-
-function chain(x, exs...)
-  reduce(chain, x, exs)
-end
+chain(head, tail) = expose(maybeinsert(tail), head)
+chain(head, tails...) = reduce(chain, head, tails)
 
 """
     @c x
@@ -101,7 +99,7 @@ end
 
 Standard evaluation version of `@l`.
 """
-lambda(x) = Expr( :->, :_, x)
+lambda(x) = :(_ -> $x)
 
 """
     @l x
@@ -116,14 +114,11 @@ end
 
 replace_record!(e, d) = (e, d)
 function replace_record!(e::Expr, d)
-  if ( e.head == :call ) & ( length(e.args) == 2 ) & ( e.args[1] == :~ )
-    key = e.args[2]
+  if MacroTools.@capture e begin ~(key_) end
     if !(haskey(d, key) )
-      if MacroTools.isexpr(key, :...)
-        d[key] = Expr(:..., gensym() )
-      else
-        d[key] = gensym()
-      end
+      d[key] =
+        MacroTools.isexpr(key, :...) ?
+        Expr(:..., gensym() ) : gensym()
     end
     e = d[key]
   else
@@ -198,5 +193,65 @@ To use `~` as a function, use the alias `bitnot`
 macro o(e)
   esc( over(e) )
 end
+
+"""
+A type that can be used to store arguments. Will store positional and keyword
+arguments for later use.
+"""
+type Arguments
+  positional::Tuple
+  keyword::Vector{Any}
+end
+
+"""
+    Arguments(positional...; keyword...)
+
+Construct an Arguments type. Will store positional and keyword arguments for
+later use.
+"""
+function Arguments(positional...; keyword...)
+  Arguments(positional, keyword)
+end
+
+"""
+    push(arguments::Arguments, positional...; keyword...)
+
+Add positional and keyword arguments to an already existing arguments type.
+Positional arguments are added at the end.
+"""
+function push(arguments::Arguments, positional...; keyword...)
+  new_positional = (arguments.positional..., positional...)
+  new_keyword = vcat(arguments.keyword, keyword)
+  Arguments(new_positional, new_keyword)
+end
+
+"""
+    push(arguments::Arguments, positional...; keyword...)
+
+Add positional and keyword arguments to an already existing arguments type.
+Positional arguments are added at the start.
+"""
+function unshift(arguments::Arguments, positional...; keyword...)
+  new_positional = (positional..., arguments.positional...)
+  new_keyword = vcat(keyword, arguments.keyword)
+  Arguments(new_positional, new_keyword)
+end
+
+"""
+    ==(a::Arguments, b::Arguments)
+
+Test whether the contents and order of positional arguments is the same, and
+that the same keyword arguments are present ignoring order.
+"""
+==(a::Arguments, b::Arguments) =
+  (a.positional == b.positional) &
+  length(symdiff(a.keyword, b.keyword) == 0)
+
+"""
+     run(a::Arguments, f
+
+Call `f` on the arguments in `a`
+"""
+run(a::Arguments, f) = f(a.positional...; a.keyword...)
 
 end

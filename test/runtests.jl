@@ -1,3 +1,4 @@
+workspace()
 import ChainMap
 
 Test.@test (ChainMap.@o 1) == 1
@@ -62,15 +63,6 @@ end
 
 Test.@test both == [4, 5]
 
-errror =
-  try
-    ChainMap.chain(1, :(import ChainMap ))
-  catch x
-    x
-  end
-
-Test.@test errror.msg == "Unsupported expression import ChainMap"
-
 chain_tuple = ChainMap.@c begin
   1
   (2, 3)
@@ -108,7 +100,23 @@ errrror =
 
 Test.@test errrror.msg == "Cannot map over more than one splatted argument"
 
-test_lb = ChainMap.@l begin
-      a = _ + 1
-      a + 2
-    end
+test = ChainMap.Arguments()
+Test.@test test == ChainMap.Arguments((), Any[])
+
+test1 = ChainMap.Arguments(1, 2, a = 3, b = 4)
+test2 = ChainMap.push(test1, 5, 6, c = 5, d = 6)
+Test.@test test2 == ChainMap.Arguments((1,2,5,6),Any[(:a,3),(:b,4),(:c,5),(:d,6)])
+
+function test_function(a, b, c; d = 4)
+  a - b + c - d
+end
+
+test_arguments = ChainMap.@c begin
+  1
+  ChainMap.Arguments()
+  ChainMap.push(2, d = 2)
+  ChainMap.unshift(3)
+  ChainMap.run(test_function)
+end
+
+Test.@test test_arguments == test_function(3, 1, 2; d = 2)

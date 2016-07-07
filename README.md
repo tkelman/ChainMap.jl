@@ -34,3 +34,24 @@ more information about each function.
     @c       chain                  Chain functions
     @l       lambda                 Turn into a lambda with _ as the input variable
     @o       over                   Broadcast expression over tildad objects
+
+There is another mechanism of argument storage. This is conceptually the
+inverse of chaining. Here is an example:
+
+```{julia}
+function test_function(a, b, c; d = 4)
+  a - b + c - d
+end
+
+test_arguments = @c begin
+  1
+  Arguments
+  push(2, d = 2)
+  unshift(3)
+  run(test_function)
+end
+
+Test.@test test_arguments == test_function(3, 1, 2; d = 2)
+```
+There are four functions in this mechanism: `Arguments`, `push`, `unshift`, and
+`run`.
