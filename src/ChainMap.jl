@@ -2,6 +2,9 @@ module ChainMap
 import MacroTools
 import Base.==
 import Base.run
+import Base.copy
+import Base.push!
+import Base.unshift!
 export chain, @c, lambda, @l, over, @o, bitnot
 
 """
@@ -13,7 +16,7 @@ bitnot = ~
 
 insert(x) = :( $x(_) )
 function insert(e::Expr)
-  e = e
+  e = copy(e)
   site = e.head in [:call, :macrocall] ? 2 : 1
   insert!(e.args, site, :_)
   e
@@ -198,6 +201,7 @@ end
 A type that can be used to store arguments. Will store positional and keyword
 arguments for later use.
 """
+
 type Arguments
   positional::Tuple
   keyword::Vector{Any}
@@ -210,32 +214,48 @@ Construct an Arguments type. Will store positional and keyword arguments for
 later use.
 """
 function Arguments(positional...; keyword...)
-  Arguments(positional, keyword)
+  Arguments(positional, keyword )
 end
 
+copy(a::Arguments) = Arguments(a.positional..., a.keyword...)
+
 """
-    push(arguments::Arguments, positional...; keyword...)
+    push!(arguments::Arguments, positional...; keyword...)
 
 Add positional and keyword arguments to an already existing arguments type.
 Positional arguments are added at the end.
 """
-function push(arguments::Arguments, positional...; keyword...)
-  new_positional = (arguments.positional..., positional...)
-  new_keyword = vcat(arguments.keyword, keyword)
-  Arguments(new_positional, new_keyword)
+function push!(a::Arguments, positional...; keyword...)
+  a.positional = (a.positional..., positional...)
+  append!(a.keyword, keyword)
+  a
 end
 
-"""
-    push(arguments::Arguments, positional...; keyword...)
-
-Add positional and keyword arguments to an already existing arguments type.
-Positional arguments are added at the start.
-"""
-function unshift(arguments::Arguments, positional...; keyword...)
-  new_positional = (positional..., arguments.positional...)
-  new_keyword = vcat(keyword, arguments.keyword)
-  Arguments(new_positional, new_keyword)
+function unshift!(a::Arguments, positional...; keyword...)
+  a.positional = (positional..., a.positional...)
+  append!(a.keyword, keyword)
+  a
 end
+
+macro safe(fs...)
+  esc(safe_map(fs...))
+end
+
+function safe(f::Symbol)
+  f_string = string(f)
+  if f_string[length(f_string)] != '!'
+    error("Function must end in !")
+  end
+  f_chop = symbol(chop(f_string))
+  :(function $f_chop(x, args...; kwargs...)
+      print("args $args kwargs $kwargs")
+      $f(copy(x), args...; kwargs...)
+    end)
+end
+
+safe_map(fs...) = Expr(:block, map(safe, fs)...)
+
+
 
 """
     ==(a::Arguments, b::Arguments)

@@ -5,6 +5,8 @@ Test.@test (ChainMap.@o 1) == 1
 
 Test.@test ChainMap.bitnot(1) == -2
 
+methods(append!)
+
 
 test_chain = ChainMap.@c begin
   1
@@ -103,9 +105,18 @@ Test.@test errrror.msg == "Cannot map over more than one splatted argument"
 test = ChainMap.Arguments()
 Test.@test test == ChainMap.Arguments((), Any[])
 
+ChainMap.@safe push! unshift!
+
 test1 = ChainMap.Arguments(1, 2, a = 3, b = 4)
-test2 = ChainMap.push(test1, 5, 6, c = 5, d = 6)
-Test.@test test2 == ChainMap.Arguments((1,2,5,6),Any[(:a,3),(:b,4),(:c,5),(:d,6)])
+test2 = push!(test1, (5, 6)...; [ (:c, 5), (:d, 6) ]... )
+Test.@test test2 == ChainMap.Arguments((1,2,5,6),
+                                       Set(Any[(:a,3),(:b,4),(:c,5),(:d,6)]))
+
+moose3(a; b = 2) = a + b
+moose3(1, b = 2, b = 3, c = 2)
+
+moose2(1, 2, c = 2, d = 3)
+
 
 function test_function_2(a, b, c; d = 4)
   a - b + c - d
@@ -114,8 +125,9 @@ end
 test_arguments = ChainMap.@c begin
   1
   ChainMap.Arguments()
-  ChainMap.push(2, d = 2)
-  ChainMap.unshift(3)
+  push(2, d = 2)
+  unshift(3)
+end
   ChainMap.run(test_function_2)
 end
 
