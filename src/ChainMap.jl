@@ -56,17 +56,18 @@ Separate single blocks out into lines and recur, return single non-blocks.
 
     @c begin
          1
-         +(1)
+         plus(1)
        end
 
-is the same as `@c 1 +(1)`
+is the same as `@c 1 plus(1)`
 
     @c x ex
 
-`@c` always substitutes `x` into `\_` in `ex`. `@c 1 -(2, \_)` returns `-(2, 1)`
+`@c` always substitutes `x` into `\_` in `ex`. `@c 1 minus(2, \_)` returns
+`minus(2, 1)`
 
 In addition, insertion of `x` to the first argument of `ex` is default.
-`@c 1 +(1)` returns `+(1, 1)`
+`@c 1 plus(1)` returns `plus(1, 1)`
 
 Insertion is overridden in three ways:
 
@@ -77,21 +78,22 @@ See the first example
 
     @c 1 begin
            b = 2
-           -(b, \_)
+           minus(b, \_)
          end
 
 will translate to
 
     begin
       b = 2
-      -(b, 1)
+      minus(b, 1)
     end
 
 - If `ex` is a lambda. `@c 1 x -> x + \_` will translate to `x -> x + 1`
 
     @c x exs...
 
-Reduce `@c` over `(x, exs...)`. `@c 1 -(2) +(3)` is the same as +(-(1, 2), 3)
+Reduce `@c` over `(x, exs...)`. `@c 1 minus(2) plus(3)` is the same as
+`plus(minus(1, 2), 3)`
 """
 macro c(exs...)
   esc( chain(exs...) )
@@ -111,21 +113,22 @@ An anonymous function is constructed, with `_` as an input varible.
 
 `@l -(2, \_)` will return `\_ -> -(2, \_)`
 """
+
 macro l(x)
-  esc( lambda(x) )
+  @c x lambda esc
 end
 
 replace_record!(e, d) = (e, d)
 function replace_record!(e::Expr, d)
   if MacroTools.@capture e begin ~(key_) end
-    if !(haskey(d, key) )
+    if @c d haskey(key) !
       d[key] =
         MacroTools.isexpr(key, :...) ?
         Expr(:..., gensym() ) : gensym()
     end
     e = d[key]
   else
-    e.args = map(e -> replace_record!(e, d)[1], MacroTools.rmlines(e.args) )
+    e.args = @c e.args MacroTools.rmlines() map(e -> replace_record!(e, d)[1], _)
   end
   (e, d)
 end
@@ -135,7 +138,7 @@ end
 
 Standard evalution version of `@o`
 """
-function over(e)
+function over!(e)
   d = Dict()
   replace_record!(e, d)
 
@@ -194,7 +197,7 @@ Tildad expressions do not have to be named.
 To use `~` as a function, use the alias `bitnot`
 """
 macro o(e)
-  esc( over(e) )
+  @c e over! esc
 end
 
 """
@@ -217,7 +220,7 @@ function Arguments(positional...; keyword...)
   Arguments(positional, keyword )
 end
 
-copy(a::Arguments) = Arguments(a.positional..., a.keyword...)
+copy(a::Arguments) = Arguments(a.positional...; a.keyword...)
 
 """
     push!(arguments::Arguments, positional...; keyword...)
@@ -227,35 +230,31 @@ Positional arguments are added at the end.
 """
 function push!(a::Arguments, positional...; keyword...)
   a.positional = (a.positional..., positional...)
-  append!(a.keyword, keyword)
+  @c a.keyword append!(keyword)
   a
 end
 
 function unshift!(a::Arguments, positional...; keyword...)
   a.positional = (positional..., a.positional...)
-  append!(a.keyword, keyword)
+  @c a.keyword append!(keyword)
   a
 end
 
 macro safe(fs...)
-  esc(safe_map(fs...))
+  @c fs safe_map(_...) esc
 end
 
 function safe(f::Symbol)
   f_string = string(f)
-  if f_string[length(f_string)] != '!'
+  if @c f_string endswith("!") !
     error("Function must end in !")
   end
-  f_chop = symbol(chop(f_string))
-  :(function $f_chop(x, args...; kwargs...)
-      print("args $args kwargs $kwargs")
-      $f(copy(x), args...; kwargs...)
-    end)
+  f_chop = @c f_string chop symbol
+
+  :( $f_chop(x, args...; kwargs...) = $f(copy(x), args...; kwargs...) )
 end
 
-safe_map(fs...) = Expr(:block, map(safe, fs)...)
-
-
+safe_map(fs...) = @c fs map(safe, _) Expr(:block, _...)
 
 """
     ==(a::Arguments, b::Arguments)
@@ -265,7 +264,7 @@ that the same keyword arguments are present ignoring order.
 """
 ==(a::Arguments, b::Arguments) =
   (a.positional == b.positional) &
-  (length(symdiff(a.keyword, b.keyword) ) == 0)
+  @c a.keyword symdiff(b.keyword) length (_ == 0)
 
 """
      run(a::Arguments, f

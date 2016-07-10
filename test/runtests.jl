@@ -5,9 +5,6 @@ Test.@test (ChainMap.@o 1) == 1
 
 Test.@test ChainMap.bitnot(1) == -2
 
-methods(append!)
-
-
 test_chain = ChainMap.@c begin
   1
   +(1)
@@ -95,7 +92,7 @@ b = ( [5, 6], [7, 8] )
 
 errrror =
   try
-    ChainMap.over( :( +( ~(a...), ~(b...) ) ) )
+    ChainMap.over!( :( +( ~(a...), ~(b...) ) ) )
   catch x
     x
   end
@@ -108,15 +105,10 @@ Test.@test test == ChainMap.Arguments((), Any[])
 ChainMap.@safe push! unshift!
 
 test1 = ChainMap.Arguments(1, 2, a = 3, b = 4)
-test2 = push!(test1, (5, 6)...; [ (:c, 5), (:d, 6) ]... )
-Test.@test test2 == ChainMap.Arguments((1,2,5,6),
-                                       Set(Any[(:a,3),(:b,4),(:c,5),(:d,6)]))
-
-moose3(a; b = 2) = a + b
-moose3(1, b = 2, b = 3, c = 2)
-
-moose2(1, 2, c = 2, d = 3)
-
+test2 = push(test1, 5, 6; c = 7, d = 8 )
+Test.@test test2 ==
+  ChainMap.Arguments((1,2,5,6),
+                     Any[(:a,3),(:b,4),(:c,7),(:d,8)])
 
 function test_function_2(a, b, c; d = 4)
   a - b + c - d
@@ -127,8 +119,11 @@ test_arguments = ChainMap.@c begin
   ChainMap.Arguments()
   push(2, d = 2)
   unshift(3)
-end
   ChainMap.run(test_function_2)
 end
 
 Test.@test test_arguments == test_function_2(3, 1, 2; d = 2)
+
+a = [1, 2]
+b = ChainMa@c a push(1) unshift(2)
+Test.@test a != b

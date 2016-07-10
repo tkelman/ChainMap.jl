@@ -6,9 +6,9 @@
 [![Coverage Status](https://coveralls.io/repos/bramtayl/ChainMap.jl/badge.svg?branch=master&service=github)](https://coveralls.io/github/bramtayl/ChainMap.jl?branch=master)
 [![Build status](https://ci.appveyor.com/api/projects/status/github/bramtayl/ChainMap.jl?svg=true&branch=master)](https://ci.appveyor.com/project/bramtayl/chainmap-jl/branch/master)
 
-This package attempts to integrate mapping and chaining.
-The chaining code owes heavily to one-more-minute/Lazy.jl.
-Here is a short example to illustrate the different kind of things you can do with this package.
+This package attempts to integrate mapping and chaining. The chaining code owes
+heavily to one-more-minute/Lazy.jl. Here is a short example to illustrate the
+different kind of things you can do with this package.
 
 ```{julia}
 readme = @l @o @c begin
@@ -23,17 +23,29 @@ readme = @l @o @c begin
   sum
 end
 
-readme([1, 2]) == [2, 4]
+Test.@test readme([1, 2]) == [2, 4]
 ```
 
-Here is a short list of exported objects and what they do. See docstrings for
-more information about each function.
+There is an additional macro that makes copy versions of mutate in place
+functions
 
-    Macro    Standard evaluation    Description
+```{julia}
+@safe push! unshift!
+
+a = [1, 2]
+b = @c a push(1) unshift(2)
+Test.@test a != b
+```
+
+Here is a short list of exported macros and what they do. See
+docstrings for more information about each function.
+
+    Macro   Standard evaluation   Description
     ----------------------------------------------------------------------------
-    @c       chain                  Chain functions
-    @l       lambda                 Turn into a lambda with _ as the input variable
-    @o       over                   Broadcast expression over tildad objects
+    @c      chain                 Chain functions
+    @l      lambda                Turn into a lambda with _ as the input variable
+    @o      over                  Broadcast expression over tildad objects
+    @safe   safe_map              Create safe versions of mutate-in-place functions
 
 There is another mechanism of argument storage. This is conceptually the
 inverse of chaining. Here is an example:
@@ -46,12 +58,12 @@ end
 test_arguments = @c begin
   1
   Arguments
-  push(2, d = 2)
-  unshift(3)
+  push!(2, d = 2)
+  unshift!(3)
   run(test_function)
 end
 
 Test.@test test_arguments == test_function(3, 1, 2; d = 2)
 ```
-There are four functions in this mechanism: `Arguments`, `push`, `unshift`, and
-`run`.
+There are four functions in this mechanism: `Arguments`, `push!`, `unshift!`,
+and `run`. I recommending using the `@safe` macro to add push and unshift.
