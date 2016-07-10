@@ -1,4 +1,3 @@
-workspace()
 import ChainMap
 
 Test.@test (ChainMap.@o 1) == 1
