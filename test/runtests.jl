@@ -129,7 +129,7 @@ Test.@test a != b
 
 errror =
   try
-    ChainMap.safe_map(:hello)
+    ChainMap.safe(:hello)
   catch x
     x
   end
