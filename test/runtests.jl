@@ -126,3 +126,12 @@ Test.@test test_arguments == test_function_2(3, 1, 2; d = 2)
 a = [1, 2]
 b = ChainMap.@c a push(1) unshift(2)
 Test.@test a != b
+
+errror =
+  try
+    ChainMap.safe_map(:hello)
+  catch x
+    x
+  end
+
+Test.@test errror.msg == "Function must end in !"

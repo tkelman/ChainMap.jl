@@ -36,9 +36,9 @@ maybeinsert(e) =
 expose(tail, head) = :(let _ = $head; $tail; end)
 
 """
-    chain(x)
+    chain(single)
     chain(head, tail)
-    chain(x, exs...)
+    chain(head, tails...)
 
 Standard evaluation version of `@c`.
 """
@@ -204,7 +204,6 @@ end
 A type that can be used to store arguments. Will store positional and keyword
 arguments for later use.
 """
-
 type Arguments
   positional::Tuple
   keyword::Vector{Any}
@@ -240,11 +239,18 @@ function unshift!(a::Arguments, positional...; keyword...)
   a
 end
 
+"""
+    @safe(fs...)
+
+Defines a new version of mutate-in-place functions like `push!` that copy the first
+argument before processing. The new function will have a name without !, like `push`.
+Can take multiple functions.
+"""
 macro safe(fs...)
   @c fs safe_map(_...) esc
 end
 
-function safe(f::Symbol)
+function safe_single(f::Symbol)
   f_string = string(f)
   if @c f_string endswith("!") !
     error("Function must end in !")
@@ -254,7 +260,12 @@ function safe(f::Symbol)
   :( $f_chop(x, args...; kwargs...) = $f(copy(x), args...; kwargs...) )
 end
 
-safe_map(fs...) = @c fs map(safe, _) Expr(:block, _...)
+"""
+    safe(fs...)
+
+Standard evaluation version of @safe.
+"""
+safe(fs...) = @c fs map(safe_single, _) Expr(:block, _...)
 
 """
     ==(a::Arguments, b::Arguments)
@@ -267,7 +278,7 @@ that the same keyword arguments are present ignoring order.
   @c a.keyword symdiff(b.keyword) length (_ == 0)
 
 """
-     run(a::Arguments, f
+     run(a::Arguments, f)
 
 Call `f` on the arguments in `a`
 """
