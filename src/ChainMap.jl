@@ -247,7 +247,7 @@ argument before processing. The new function will have a name without !, like `p
 Can take multiple functions.
 """
 macro safe(fs...)
-  @c fs safe_map(_...) esc
+  @c fs safe(_...) esc
 end
 
 function safe_single(f::Symbol)
