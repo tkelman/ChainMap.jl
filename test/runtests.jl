@@ -1,3 +1,4 @@
+workspace()
 import ChainMap
 
 Test.@test (ChainMap.@o 1) == 1
@@ -134,7 +135,3 @@ errror =
   end
 
 Test.@test errror.msg == "Function must end in !"
-
-back_func(a, b, c) = a + b + c
-
-Test.@test (ChainMap.@c 1 back_func b(2, 3) ) == 6
