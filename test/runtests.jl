@@ -47,7 +47,7 @@ Test.@test test_chain_function(1) == 2
 
 test_map = @c begin
   1
-  x -> x^2 + _
+  begin x -> x^2 + _ end
   map([1, 2])
 end
 

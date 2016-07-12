@@ -14,7 +14,7 @@ matchexpr(e::Expr, heads, args) =
   (e.head in heads) | incommon(e.args, args )
 
 maybeinsert_!(e) =
-  matchexpr( e, [:->, :block] ,
+  matchexpr( e, [:block] ,
                 [:_, Expr(:..., :_) ] ) ?
   e : insert_!(e)
 
@@ -54,7 +54,7 @@ is the same as `@c 1 plus(1)`
 In addition, insertion of `x` to the first argument of `ex` is default.
 `@c 1 plus(1)` returns `plus(1, 1)`
 
-Insertion is overridden in three ways:
+Insertion is overridden in two ways:
 
 - If bare `\_` or `\_...` is an argument to `ex`.
 See the first example
@@ -72,8 +72,6 @@ will translate to
       b = 2
       minus(b, 1)
     end
-
-- If `ex` is a lambda. `@c 1 x -> x + \_` will translate to `x -> x + 1`
 
     @c x exs...
 
