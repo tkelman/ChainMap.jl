@@ -37,15 +37,19 @@ b = @c a push(1) unshift(2)
 Test.@test a != b
 ```
 
+`@safe` will create functions that copy only the first positional argument;
+`@allsafe` will create functions that copy all arguments.
+
 Here is a short list of exported macros and what they do. See
 docstrings for more information about each function.
 
-    Macro   Standard evaluation   Description
-    ----------------------------------------------------------------------------
-    @c      chain!                Chain functions
-    @l      lambda                Turn into a lambda with _ as the input variable
-    @o      over!                 Broadcast expression over tildad objects
-    @safe   safe                  Create safe versions of mutate-in-place functions
+    Macro    Standard evaluation   Description
+    --------------------------------------------------------------------------------
+    @c       chain!                Chain functions
+    @l       lambda                Turn into a lambda with _ as the input variable
+    @o       over!                 Broadcast expression over tildad objects
+    @safe    safe                  Create safe versions of mutate-in-place functions
+    @allsafe safe(onearg = false)  `@safe`, but copy all args, not just the first
 
 There is another mechanism of argument storage. This is conceptually the
 inverse of chaining. Here is an example:
