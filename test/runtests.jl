@@ -144,7 +144,7 @@ function multi_push!(a; b = [1, 2])
   (a, b)
 end
 
-@safe multi_push!
+@allsafe multi_push!
 (a_fix, b_fix) = multi_push(a; b = b)
 Test.@test a_fix != a
 Test.@test b_fix != b
