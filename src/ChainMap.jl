@@ -14,11 +14,11 @@ Alias for `~` for use within `@o`
 """
 bitnot = ~
 
-insert_!(x) = :( $x(_) )
-function insert_!(e::Expr)
+insert(x) = :( $x(_) )
+function insert(e::Expr)
+  e = copy(e)
   site = e.head in [:call, :macrocall] ? 2 : 1
-  placeholder = getplaceholder(forward)
-  insert!(e.args, site, placeholder)
+  insert!(e.args, site, :_)
   e
 end
 
@@ -28,83 +28,12 @@ matchexpr(e, heads, args) = false
 matchexpr(e::Expr, heads, args) =
   (e.head in heads) | incommon(e.args, args )
 
-unblock(e) = e
-function unblock(e::Expr)
-  e = MacroTools.rmlines(e)
-  e.head == :block && length(e.args) == 1 ?
-    e.args[1] :
-    e
-end
+maybeinsert(e) =
+  matchexpr( e, [:->, :block] ,
+                [:_, Expr(:..., :_) ] ) ?
+  e : insert(e)
 
-test = :(if a == 1; 2; else; 3; end)
-test.head
-
-function maybeinsert_!(e, forward = true)
-  placeholder = getplaceholder(forward)
-  matchexpr( e, [:->, :block, :(=)] ,
-                [placeholder, Expr(:..., placeholder) ] ) ?
-  e : insert_!(e, forward)
-end
-
-function expose(tail, head, forward = true)
-  placeholder = getplaceholder(forward)
-  Expr(:let,
-       tail,
-       Expr(:(=), placeholder, head) )
-end
-
-link!(head, tail, forward = true) =
-  forward ?
-    expose(maybeinsert_!(tail), head, forward) :
-    expose(maybeinsert_!(head, forward), tail, forward)
-
-pipe!(x) = x
-function pipe!(e::Expr)
-  pipe!(e.head)
-  map!(pipe!, e.args)
-
-  e =
-    (e.head == :call) && (e.args[1] in [:<|, :|>] ) ?
-      length(e.args) != 3 ?
-        error("<| and |> must take exactly arguments") :
-        link!(e.args[2], e.args[3], e.args[1] == :|>) :
-      e
-end
-
-test = :( %(1 + 2) )
-
-
-macro p(e)
-  esc(pipe!(e))
-end
-
-@p 1 |> +(2) |> +(3) <| 2 <| 4
-
-pipe!(:( 1 |> +(2) |> +(3) <| 2 <| 4 ))
-test =
-quote
-  let a = 1
-    2
-  end
-end
-test.args[2].head
-
-e = :(+(2) <| 1 <| 1)
-pipe!(e)
-e.args
-pipe!(e.args[2])
-
-@p +(2) <| 1 <| 1
-
-test = :(hello(1; a = 2, b = 3))
-
-hello(a, b = 3)
-
-pipe!(:(1 |> +(2) ) )
-pipe!(:(hello(2) <| (:hi, 2)) )
-
-
-
+expose(tail, head) = :(let _ = $head; $tail; end)
 
 """
     chain(single)
@@ -117,7 +46,7 @@ chain(single) =
   MacroTools.isexpr(single, :block) ?
   chain(MacroTools.rmlines(single).args...) : single
 
-chain(head, tail) = expose(maybeinsert_!(tail), head)
+chain(head, tail) = expose(maybeinsert(tail), head)
 chain(head, tails...) = reduce(chain, head, tails)
 
 """
