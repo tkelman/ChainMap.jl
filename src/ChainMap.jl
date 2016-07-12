@@ -46,8 +46,26 @@ chain(single) =
   MacroTools.isexpr(single, :block) ?
   chain(MacroTools.rmlines(single).args...) : single
 
-chain(head, tail) = expose(maybeinsert(tail), head)
-chain(head, tails...) = reduce(chain, head, tails)
+backsert(e, args...) = Expr(:call, e, args...)
+function backsert(e::Expr, args...)
+  e = MacroTools.rmlines(e)
+  if e.head in [:block, :let]
+    e.args[1] = backsert(e.args[1], args...)
+  else
+    push!(e.args, args...)
+  end
+  e
+end
+
+function chain(head, tail)
+  if MacroTools.@capture tail b(args__)
+    backsert(head, args...)
+  else
+    expose(maybeinsert(tail), head)
+  end
+end
+
+chain(head, tails...) = foldl(chain, head, tails)
 
 """
     @c x
