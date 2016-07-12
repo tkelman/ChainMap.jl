@@ -134,3 +134,17 @@ errror =
   end
 
 Test.@test errror.msg == "Function must end in !"
+
+a = [1, 2]
+b = [3, 4]
+
+function multi_push!(a; b = [1, 2])
+  push!(a, 1)
+  push!(b, 2)
+  (a, b)
+end
+
+@safe multi_push!
+(a_fix, b_fix) = multi_push(a; b = b)
+Test.@test a_fix != a
+Test.@test b_fix != b
