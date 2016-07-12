@@ -5,7 +5,7 @@ import Base.run
 import Base.copy
 import Base.push!
 import Base.unshift!
-export chain, @c, lambda, @l, over, @o, bitnot
+export chain!, @c, lambda, @l, over!, @o, bitnot, @safe, safe, Arguments
 
 """
     bitnot
@@ -14,9 +14,8 @@ Alias for `~` for use within `@o`
 """
 bitnot = ~
 
-insert(x) = :( $x(_) )
-function insert(e::Expr)
-  e = copy(e)
+insert_!(x) = :( $x(_) )
+function insert_!(e::Expr)
   site = e.head in [:call, :macrocall] ? 2 : 1
   insert!(e.args, site, :_)
   e
@@ -28,26 +27,26 @@ matchexpr(e, heads, args) = false
 matchexpr(e::Expr, heads, args) =
   (e.head in heads) | incommon(e.args, args )
 
-maybeinsert(e) =
+maybeinsert_!(e) =
   matchexpr( e, [:->, :block] ,
                 [:_, Expr(:..., :_) ] ) ?
-  e : insert(e)
+  e : insert_!(e)
 
 expose(tail, head) = :(let _ = $head; $tail; end)
 
 """
-    chain(single)
-    chain(head, tail)
-    chain(head, tails...)
+    chain!(single)
+    chain!(head, tail)
+    chain!(head, tails...)
 
 Standard evaluation version of `@c`.
 """
-chain(single) =
+chain!(single) =
   MacroTools.isexpr(single, :block) ?
-  chain(MacroTools.rmlines(single).args...) : single
+  chain!(MacroTools.rmlines(single).args...) : single
 
-chain(head, tail) = expose(maybeinsert(tail), head)
-chain(head, tails...) = reduce(chain, head, tails)
+chain!(head, tail) = expose(maybeinsert_!(tail), head)
+chain!(head, tails...) = reduce(chain!, head, tails)
 
 """
     @c x
@@ -96,7 +95,7 @@ Reduce `@c` over `(x, exs...)`. `@c 1 minus(2) plus(3)` is the same as
 `plus(minus(1, 2), 3)`
 """
 macro c(exs...)
-  esc( chain(exs...) )
+  esc( chain!(exs...) )
 end
 
 """
@@ -113,7 +112,6 @@ An anonymous function is constructed, with `_` as an input varible.
 
 `@l -(2, \_)` will return `\_ -> -(2, \_)`
 """
-
 macro l(x)
   @c x lambda esc
 end
@@ -225,7 +223,7 @@ copy(a::Arguments) = Arguments(a.positional...; a.keyword...)
     push!(arguments::Arguments, positional...; keyword...)
 
 Add positional and keyword arguments to an already existing arguments type.
-Positional arguments are added at the end.
+Arguments are added at the end.
 """
 function push!(a::Arguments, positional...; keyword...)
   a.positional = (a.positional..., positional...)
@@ -233,6 +231,12 @@ function push!(a::Arguments, positional...; keyword...)
   a
 end
 
+"""
+    unshift!(arguments::Arguments, positional...; keyword...)
+
+Add positional and keyword arguments to an already existing arguments type.
+Arguments are added at the start.
+"""
 function unshift!(a::Arguments, positional...; keyword...)
   a.positional = (positional..., a.positional...)
   @c a.keyword append!(keyword)

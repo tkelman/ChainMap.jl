@@ -42,9 +42,9 @@ docstrings for more information about each function.
 
     Macro   Standard evaluation   Description
     ----------------------------------------------------------------------------
-    @c      chain                 Chain functions
+    @c      chain!                Chain functions
     @l      lambda                Turn into a lambda with _ as the input variable
-    @o      over                  Broadcast expression over tildad objects
+    @o      over!                 Broadcast expression over tildad objects
     @safe   safe                  Create safe versions of mutate-in-place functions
 
 There is another mechanism of argument storage. This is conceptually the
