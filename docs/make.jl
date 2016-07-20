@@ -1,3 +1,3 @@
-using Documenter, Example
+using Documenter, ChainMap
 
 makedocs()
