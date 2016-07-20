@@ -9,7 +9,6 @@ function remove_suffix(f, suffix)
 end
 
 function nonstandard1(f)
-  docstring = "Nonstandard version of @$f"
   quote
     @doc $docstring $f
     macro $f(args...)
@@ -20,7 +19,6 @@ end
 
 function multiblock1(f)
   f_chop = remove_suffix(f, "1")
-  docstring = "Singleblock version of $f_chop"
   quote
     @doc $docstring $f
     function $f_chop(fs...)
