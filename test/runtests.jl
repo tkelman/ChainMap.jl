@@ -104,9 +104,7 @@ test2 = push(test1, 5, 6; c = 7, d = 8 )
 d = Dict{Symbol, Any}([(:c, 7), (:a, 3), (:b, 4), (:d, 8)])
 Test.@test test2 == Arguments((1,2,5,6), d)
 
-function test_function_2(a, b, c; d = 4)
-  a - b + c - d
-end
+test_function_2(a, b, c; d = 4) = a - b + c - d
 
 test_arguments = @chain begin
   1
@@ -144,3 +142,16 @@ ChainMap.@allsafe multi_push!
 (a_fix, b_fix) = multi_push(a; b = b)
 Test.@test a_fix != a
 Test.@test b_fix != b
+
+c = ChainMap.chain
+o = ChainMap.over
+l = ChainMap.lambda
+@nonstandard c o l
+
+alias_test = @c begin
+  1
+  +(2)
+  +(3)
+end
+
+Test.@test alias_test == 6

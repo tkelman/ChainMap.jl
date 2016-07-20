@@ -2,8 +2,10 @@
     @safe(fs...)
 
 Defines a new version of mutate-in-place functions like `push!` that copies the
-first positional argument before processing. The new function will have a name
-without !, like `push`. Can be used on multiple functions.
+first positional argument before processing.
+
+The new function will have a name without !, like `push`. Can be used on
+multiple functions.
 """ :(@safe)
 
 @doc """
@@ -13,90 +15,104 @@ The same as `@safe`, except creates copies of all arguments
 """  :(@allsafe)
 
 @doc """
-    @chain x
+    @chain single
 
 Separate single blocks out into lines and recur, return single non-blocks.
 
-    @chain begin
-         1
-         plus(1)
-       end
+    @chain head tail
 
-is the same as `@chain 1 plus(1)`
+`@chain` always substitutes `head` into `\_` in `tail`.
 
-    @chain x ex
+In addition, insertion of `head` to the first argument of `tail` is default.
+Insertion is overridden in two ways: if bare `\_` or `\_...` is an argument to
+`tail`, or if `tail` is a block.
 
-`@chain` always substitutes `x` into `\_` in `ex`. `@chain 1 minus(2, \_)` returns
-`minus(2, 1)`
+    @chain head tails...
 
-In addition, insertion of `x` to the first argument of `ex` is default.
-`@chain 1 plus(1)` returns `plus(1, 1)`
+Reduce `@chain` over `(head, tails...)`.
 
-Insertion is overridden in two ways:
+# Examples
+```{julia}
+plus(a, b) = a + b
+minus(a, b) = a - b
 
-- If bare `\_` or `\_...` is an argument to `ex`.
-See the first example
+Test.@test (@chain begin
+                     1
+                     plus(1)
+                   end) ==
+           @chain 1 plus(1)
 
-- If `ex` is a block.
+Test.@test (@chain 1 minus(2, _) ) ==
+           minus(2, 1)
 
-    @chain 1 begin
-           b = 2
-           minus(b, \_)
-         end
+Test.@test (@chain 1 plus(2) ) ==
+           plus(1, 2)
 
-will translate to
+Test.@test (@chain begin
+                     1
+                     begin
+                       b = 2
+                       minus(b, _)
+                     end
+                   end) ==
+           begin
+             b = 2
+             minus(b, 1)
+           end
 
-    begin
-      b = 2
-      minus(b, 1)
-    end
-
-    @chain x exs...
-
-Reduce `@chain` over `(x, exs...)`. `@chain 1 minus(2) plus(3)` is the same as
-`plus(minus(1, 2), 3)`
+Test.@test (@chain 1 minus(2) plus(3) ) ==
+           plus(minus(1, 2), 3)
+```
 """  :(@chain)
 
 @doc """
-    @lambda x
+    @lambda(e)
 
 An anonymous function is constructed, with `_` as an input varible.
 
-`@lambda -(2, \_)` will return `\_  -(2, \_)`
+# Examples
+```{julia}
+testlambda = @lambda -(2, _)
+Test.@test  testlambda(1) == -(2, 1)
+```
 """  :(@lambda)
 
 @doc """
     @over e
 
-Interprets e as a function to map with, and expressions wrapped with tilda as
-objects to broadcast over.
+Interprets e as a function to broadcast with, and expressions wrapped with
+tildas as objects to broadcast over.
 
-Let `a = [1, 2]`, `b = [3, 4]`, `c = ( [5, 6], [7, 8] )`, `d = 9`
+You can also map over splatted arguments, but only one. Make multi-line
+functions by wrapping in blocks. To use `~` as a function, use the alias
+`bitnot`.
 
-`@over +(~a + ~a + ~b)` = `[1 + 1 + 3, 2 + 2 + 4]`
+# Examples
 
-Objects do not have to be the same size.
+```{julia}
+Test.@test (@over +( ~[1, 2], ~[3, 4] ) ) ==
+           [1 + 3, 2 + 4]
 
-`@over +(~a, ~d)` = `[1 + 9, 2 + 9]`
+a = [1, 2]
+b = [3, 4]
+c = ( [5, 6], [7, 8] )
+d = 9
 
-You can also map over splatted arguments.
+Test.@test (@over ~a + ~a + ~b) ==
+           [1 + 1 + 3, 2 + 2 + 4]
 
-`@over ~a + ~(c...)` = `( [1 + 5 + 7], [2 + 6 + 8] )`
+Test.@test (@over +(~a, ~d) ) ==
+           [1 + 9, 2 + 9]
 
-Make multi-line functions by wrapping in blocks
+Test.@test (@over ~a + ~(c...) ) ==
+           [ [1 + 5 + 7], [2 + 6 + 8] ]
 
-    @over begin
-         e = ~a
-         e + 1
-       end
-
-yields `[2, 3]`
-
-Tildad expressions do not have to be named.
-
-`@over +( ~[1, 2], ~[3, 4] )` = `[1 + 3, 2 + 4]`
-
-To use `~` as a function, use the alias `bitnot`
+Test.@test (@over begin
+                    e = ~a
+                    e + 1
+                  end ) ==
+            [2, 3]
+```
 """  :(@over)
 
 @doc """
@@ -110,28 +126,58 @@ Alias for `~` for use within `@over`
 
 A type that can be used to store arguments. Will store positional and keyword
 arguments for later use.
+
+# Examples
+```julia
+a = Arguments(1, 2, a = 3, b = 4)
+Test.@test a.positional ==
+           (1, 2)
+Test.@test a.keyword ==
+           Dict{Symbol, Any}(:a => 3, :b => 4)
+```
 """ Arguments
 
 @doc """
     push(arguments::Arguments, positional...; keyword...)
 
 Add positional and keyword arguments to an already existing arguments type.
-Positional arguments are added at the end. Note that push can also be used in any other
-context that push! is defined; it will copy the first argument before executing.
-""" :(push)
+Positional arguments are added at the end. Note that push can also be used in
+any other context that push! is defined; it will copy the first argument before
+executing.
+
+# Examples
+```julia
+Test.@test (@chain Arguments(1, a = 3) push(2, b = 4) ) ==
+           Arguments(1, 2, a = 3, b = 4)
+```
+""" push
 
 @doc """
     unshift(arguments::Arguments, positional...)
 
-Add positional arguments to an already existing arguments type. Arguments are added at
-the start.  Note that unshift can also be used in any other context that unshift! is
-defined; it will copy the first argument before executing.
+Add positional arguments to an already existing arguments type. Arguments are
+added at the start. Note that unshift can also be used in any other context that
+unshift! is defined; it will copy the first argument before executing.
+
+# Examples
+```julia
+Test.@test (@chain Arguments(1, a = 3) unshift(2) ) ==
+           Arguments(2, 1, a = 3)
+```
 """ unshift
 
 @doc """
      run(a::Arguments, f)
 
 Call `f` on the arguments in `a`
+
+# Examples
+```julia
+testfunction(a, b; c = 4) = a - b + c
+
+Test.@test (@chain Arguments(1, 2, c = 3) run(testfunction) ) ==
+           testfunction(1, 2, c = 3)
+```
 """ run
 
 @doc """

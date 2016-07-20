@@ -1,4 +1,4 @@
-insert_!(x) = :( $x(_) )
+insert_!(e) = :( $e(_) )
 function insert_!(e::Expr)
   site = e.head in [:call, :macrocall] ? 2 : 1
   insert!(e.args, site, :_)
@@ -24,4 +24,4 @@ chain!(single) =
 chain!(head, tail) = expose(maybeinsert_!(tail), head)
 chain!(head, tails...) = reduce(chain!, head, tails)
 
-lambda(x) = :(_ -> $x)
+lambda(e) = :(_ -> $e)
