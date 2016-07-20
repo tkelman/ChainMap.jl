@@ -181,10 +181,19 @@ Test.@test (@chain Arguments(1, 2, c = 3) run(testfunction) ) ==
 """ run
 
 @doc """
-    @nonstandard(fs)
+    @nonstandard(fs...)
 
-Will create a nonstandard evaluation macro for each of the fs functions. Each function
-should be a function that takes and returns expressions. The nonstandard macro will have
-the same name but will take in code, not expressions, and will evaluate the result
-locally when the macro is called.
+Will create a nonstandard evaluation macro for each of the fs functions. Each
+function should be a function that takes and returns expressions. The
+nonstandard macro will have the same name but will take in code, not
+expressions, and will evaluate the result locally when the macro is called.
 """ :(@nonstandard)
+
+@doc """
+    @multiblock(fs...)
+
+If `f1` is a function taking one argument ending in "1" which will generate
+code, `f` will be defined. In `f`, `f1` will be mapped over all arguments and
+the results will be returned in one code block. This will happen for all `f1`
+functions in `fs...`.
+""" :(@multiblock)
