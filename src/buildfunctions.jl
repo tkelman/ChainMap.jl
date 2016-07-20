@@ -10,7 +10,6 @@ end
 
 function nonstandard1(f)
   quote
-    @doc $docstring $f
     macro $f(args...)
       esc($f(args...) )
     end
@@ -20,7 +19,6 @@ end
 function multiblock1(f)
   f_chop = remove_suffix(f, "1")
   quote
-    @doc $docstring $f
     function $f_chop(fs...)
       Expr(:block, map($f, fs)...)
     end
