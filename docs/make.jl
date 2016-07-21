@@ -4,5 +4,5 @@ makedocs()
 
 deploydocs(
     repo = "github.com/bramtayl/ChainMap.jl.git",
-    "julia = 0.4"
+    julia = "release"
 )
