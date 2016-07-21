@@ -3,5 +3,3 @@
 *.jl.mem
 docs/build/
 docs/site/
-docs/build/
-docs/site/
