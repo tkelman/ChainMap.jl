@@ -1,4 +1,6 @@
-# ChainMap
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://bramtayl.github.io/ChainMap.jl/stable)
+[![](https://img.shields.io/badge/docs-latest-blue.svg)](https://bramtayl.github.io/ChainMap.jl/latest)
+#ChainMap
 
 [![ChainMap](http://pkg.julialang.org/badges/ChainMap_0.4.svg)](http://pkg.julialang.org/?pkg=ChainMap)
 [![ChainMap](http://pkg.julialang.org/badges/ChainMap_0.5.svg)](http://pkg.julialang.org/?pkg=ChainMap)
