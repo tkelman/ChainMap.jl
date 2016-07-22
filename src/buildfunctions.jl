@@ -5,7 +5,7 @@ function remove_suffix(f, suffix)
   if !(endswith(f_string, suffix))
     error("f must end in $suffix")
   end
-  symbol(chopn(f_string, length(suffix)))
+  Symbol(chopn(f_string, length(suffix)))
 end
 
 function nonstandard1(f)

@@ -15,7 +15,7 @@ function Arguments(positional...; keyword...)
   Arguments(positional, Dict(keyword) )
 end
 
-copy(a::Arguments) = Arguments(copy(a.positional), copy(a.keyword))
+copy(a::Arguments) = Arguments(a.positional, copy(a.keyword))
 
 function push!(a::Arguments, positional...; keyword...)
   a.positional = (a.positional..., positional...)
