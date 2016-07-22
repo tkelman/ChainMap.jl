@@ -9,12 +9,6 @@ multiple functions.
 """ :(@safe)
 
 @doc """
-    @allsafe(fs...)
-
-The same as `@safe`, except creates copies of all arguments
-"""  :(@allsafe)
-
-@doc """
     @chain single
 
 Separate single blocks out into lines and recur, return single non-blocks.

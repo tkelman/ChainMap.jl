@@ -1,4 +1,3 @@
-workspace()
 using ChainMap
 
 Test.@test (@over 1) == 1
