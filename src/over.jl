@@ -40,3 +40,6 @@ function over!(e)
        keys(undotted)... ,
        keys(dotted)... )
 end
+
+over(e) = e
+over(e::Expr) = over!(copy(e))

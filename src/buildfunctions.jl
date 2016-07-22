@@ -32,12 +32,3 @@ function safe1(f)
       $f(copy(x), args...; kwargs...)
   end
 end
-
-function allsafe1(f)
-  f_chop = remove_suffix(f, "!")
-  quote
-     $f_chop(args...; kwargs...) =
-       $f(map(copy, args)...;
-          map(kw -> (kw[1], copy(kw[2]) ), kwargs)...)
-  end
-end
