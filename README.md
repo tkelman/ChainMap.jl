@@ -60,10 +60,9 @@ and `run`. See docstrings for more information.
 ## Macro generation
 
 There are several macros that create new functions/macros based on existing
-functions included: `@nonstandard`, `@safe`, `@allsafe`, and
-`@multiblock`. See docstrings for more information. Note that these functions
-were used to generate the package itself. Standard evaluation versions exist for
-all exported macros.
+functions included: `@nonstandard`, `@safe`, and `@multiblock`. See docstrings
+for more information. Note that these functions were used to generate the
+package itself. Standard evaluation versions exist for all exported macros.
 
 ## Aliasing
 
