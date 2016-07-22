@@ -129,20 +129,6 @@ errror =
 
 Test.@test errror.msg == "f must end in !"
 
-a = [1, 2]
-b = [3, 4]
-
-function multi_push!(a; b = [1, 2])
-  push!(a, 1)
-  push!(b, 2)
-  (a, b)
-end
-
-ChainMap.@allsafe multi_push!
-(a_fix, b_fix) = multi_push(a; b = b)
-Test.@test a_fix != a
-Test.@test b_fix != b
-
 c = ChainMap.chain
 o = ChainMap.over
 l = ChainMap.lambda
