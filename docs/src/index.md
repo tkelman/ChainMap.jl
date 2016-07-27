@@ -3,7 +3,9 @@
 This package attempts to integrate mapping and chaining. The chaining code owes
 heavily to one-more-minute/Lazy.jl.
 
-## Chaining
+## Read Me
+
+### Chaining
 
 Here is a short example to illustrate the chaining mechanism.
 
@@ -26,7 +28,7 @@ Test.@test readme([1, 2]) == [2, 4]
 Three macros, `@chain`, `@lambda`, and `@over`, are included in this mechanism.
 See docstrings for more information.
 
-## Argument Building
+### Argument Building
 
 There is another mechanism of argument storage. This is conceptually the
 inverse of chaining. Here is an example:
@@ -49,14 +51,14 @@ Test.@test test_arguments == test_function(3, 1, 2; d = 2)
 There are four functions in this mechanism: `Arguments`, `push`, `unshift`,
 and `run`. See docstrings for more information.
 
-## Macro generation
+### Macro generation
 
 There are several macros that create new functions/macros based on existing
 functions included: `@nonstandard`, `@safe`, and `@multiblock`. See docstrings
 for more information. Note that these functions were used to generate the
 package itself. Standard evaluation versions exist for all exported macros.
 
-## Aliasing
+### Aliasing
 
 If you want shorter versions of the chaining functions for convenience, run the
 code below.
@@ -69,3 +71,12 @@ l = ChainMap.lambda
 ```
 
 This will create, for example, the `@c` macro as identical to `@chain`.
+
+## Index of exports
+
+```@index
+```
+
+```@autodocs
+Modules = [ChainMap]
+```
