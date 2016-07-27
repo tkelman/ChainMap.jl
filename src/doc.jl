@@ -112,7 +112,12 @@ Test.@test (@over begin
 @doc """
     bitnot
 
-Alias for `~` for use within `@over`
+Alias for `~` for use within `@over`.
+
+# Examples
+```julia
+bitnot(1) == ~1
+```
 """ bitnot
 
 @doc """
@@ -181,7 +186,33 @@ Will create a nonstandard evaluation macro for each of the fs functions. Each
 function should be a function that takes and returns expressions. The
 nonstandard macro will have the same name but will take in code, not
 expressions, and will evaluate the result locally when the macro is called.
+
+#Examples
+```julia
+plus(a, b) = +(a, b)
+minus(a, b) = -(a, b)
+
+binary(a, b, c) = :($b($a, $c))
+chainback(a, b, c) = :($c($b, $a))
+
+@nonstandard binary chainback
+
+Test.@test (@binary 1 plus 2) == 3
+Test.@test (@chainback 2 3 minus) == 1
+```
 """ :(@nonstandard)
+
+@doc """
+    remove_suffix(suffixed::AbstractString, suffix::AbstractString)
+
+Will remove a `suffix` from `suffixed`.
+
+#Examples
+```julia
+Test.@test remove_suffix("hi_there", "_there") == "hi"
+Test.@test_throws ErrorException, remove_suffix("hi", "and_bye")
+```
+"""
 
 @doc """
     @multiblock(fs...)
@@ -190,4 +221,20 @@ If `f1` is a function taking one argument ending in "1" which will generate
 code, `f` will be defined. In `f`, `f1` will be mapped over all arguments and
 the results will be returned in one code block. This will happen for all `f1`
 functions in `fs...`.
+
+```julia
+timestwo(x) = 2*x
+mylog(x) = log(x)
+
+distribute1(f) = quote
+  $f(x, y) = $f(x) + $f(y)
+end
+
+@multiblock distribute1
+@nonstandard distribute
+@distribute timestwo mylog
+
+Test.@test timestwo(1, 2) == timestwo(1) + timestwo(2)
+Test.@test mylog(1, 2) == mylog(1) + mylog(2)
+```
 """ :(@multiblock)

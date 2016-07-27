@@ -1,11 +1,10 @@
 chopn(s, n) = s[1:(end - n)]
 
-function remove_suffix(f, suffix)
-  f_string = string(f)
-  if !(endswith(f_string, suffix))
-    error("f must end in $suffix")
+function remove_suffix(suffixed::AbstractString, suffix::AbstractString)
+  if !(endswith(suffixed, suffix))
+    error("suffixed must end in suffix")
   end
-  Symbol(chopn(f_string, length(suffix)))
+  chopn(suffixed, length(suffix))
 end
 
 function nonstandard1(f)
@@ -17,7 +16,7 @@ function nonstandard1(f)
 end
 
 function multiblock1(f)
-  f_chop = remove_suffix(f, "1")
+  f_chop = Symbol(remove_suffix(string(f), "1"))
   quote
     function $f_chop(fs...)
       Expr(:block, map($f, fs)...)
@@ -26,7 +25,7 @@ function multiblock1(f)
 end
 
 function safe1(f)
-  f_chop = remove_suffix(f, "!")
+  f_chop = Symbol(remove_suffix(string(f), "!"))
   quote
     $f_chop(x, args...; kwargs...) =
       $f(copy(x), args...; kwargs...)
