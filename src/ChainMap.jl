@@ -8,6 +8,6 @@ include("Arguments.jl")
 include("generate.jl")
 include("doc.jl")
 
-export @safe, @allsafe, @chain, @over, @lambda, @nonstandard, bitnot, push, @multiblock, unshift, remove_suffix
+export @safe, @allsafe, @chain, @over, @lambda, @nonstandard, bitnot, push, @multiblock, unshift
 
 end
