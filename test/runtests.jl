@@ -126,7 +126,7 @@ errror =
     x
   end
 
-Test.@test errror.msg == "f must end in !"
+Test.@test errror.msg == "suffixed must end in suffix"
 
 c = ChainMap.chain
 o = ChainMap.over

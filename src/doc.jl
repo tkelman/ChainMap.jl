@@ -192,8 +192,8 @@ expressions, and will evaluate the result locally when the macro is called.
 plus(a, b) = +(a, b)
 minus(a, b) = -(a, b)
 
-binary(a, b, c) = :($b($a, $c))
-chainback(a, b, c) = :($c($b, $a))
+binaryfun(a, b, c) = :(\$b(\$a, \$c))
+chainback(a, b, c) = :(\$c(\$b, \$a))
 
 @nonstandard binary chainback
 
@@ -210,9 +210,9 @@ Will remove a `suffix` from `suffixed`.
 #Examples
 ```julia
 Test.@test remove_suffix("hi_there", "_there") == "hi"
-Test.@test_throws ErrorException, remove_suffix("hi", "and_bye")
+Test.@test_throws ErrorException remove_suffix("hi", "and_bye")
 ```
-"""
+""" remove_suffix
 
 @doc """
     @multiblock(fs...)
@@ -222,12 +222,13 @@ code, `f` will be defined. In `f`, `f1` will be mapped over all arguments and
 the results will be returned in one code block. This will happen for all `f1`
 functions in `fs...`.
 
+# Examples
 ```julia
 timestwo(x) = 2*x
 mylog(x) = log(x)
 
 distribute1(f) = quote
-  $f(x, y) = $f(x) + $f(y)
+  \$f(x, y) = \$f(x) + \$f(y)
 end
 
 @multiblock distribute1
