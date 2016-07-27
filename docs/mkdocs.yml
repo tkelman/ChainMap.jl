@@ -28,4 +28,4 @@ docs_dir: 'build'
 
 pages:
   - Home: index.md
-  - Index: docstrings.md
+  - Exports: docstrings.md
