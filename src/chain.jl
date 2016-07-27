@@ -1,4 +1,4 @@
-makecall(e::Expr) = e
+makecall(e::Expr) = copy(e)
 makecall(e) = :( $e() )
 
 function insert_(e)

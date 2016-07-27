@@ -26,7 +26,7 @@ Insertion is overridden in two ways: if bare `\_` or `\_...` is an argument to
 Reduce `@chain` over `(head, tails...)`.
 
 # Examples
-```{julia}
+```julia
 plus(a, b) = a + b
 minus(a, b) = a - b
 
@@ -65,7 +65,7 @@ Test.@test (@chain 1 minus(2) plus(3) ) ==
 An anonymous function is constructed, with `_` as an input varible.
 
 # Examples
-```{julia}
+```julia
 testlambda = @lambda -(2, _)
 Test.@test  testlambda(1) == -(2, 1)
 ```
@@ -83,7 +83,7 @@ functions by wrapping in blocks. To use `~` as a function, use the alias
 
 # Examples
 
-```{julia}
+```julia
 Test.@test (@over +( ~[1, 2], ~[3, 4] ) ) ==
            [1 + 3, 2 + 4]
 
@@ -116,7 +116,7 @@ Alias for `~` for use within `@over`.
 
 # Examples
 ```julia
-bitnot(1) == ~1
+Test.@test bitnot(1) == ~1
 ```
 """ bitnot
 
@@ -203,6 +203,24 @@ Test.@test (@chainback 2 3 minus) == 1
 """ :(@nonstandard)
 
 @doc """
+    @nonstandard_single(fs...)
+
+The same as [`@nonstandard`](@ref), except that generated macros will take only one
+argument.
+
+#Examples
+```julia
+print_once(f) = :(string(f))
+repeat_twice(f) = :(string(f, " ", f))
+
+@nonstandard_single repeat_once repeat_twice
+
+Test.@test (@repeat_once hi) == "hi"
+Test.@test (@repeat_twice hi) == "hi hi"
+```
+""" :(@nonstandard)
+
+@doc """
     remove_suffix(suffixed::AbstractString, suffix::AbstractString)
 
 Will remove a `suffix` from `suffixed`.
@@ -224,18 +242,14 @@ functions in `fs...`.
 
 # Examples
 ```julia
-timestwo(x) = 2*x
-mylog(x) = log(x)
+line_to_block1(f) = f
+double_line_to_block1(f) = :(\$f; \$f)
 
-distribute1(f) = quote
-  \$f(x, y) = \$f(x) + \$f(y)
-end
+@multiblock line_to_block1 double_line_to_block1
+@nonstandard line_to_block double_line_to_block
 
-@multiblock distribute1
-@nonstandard distribute
-@distribute timestwo mylog
-
-Test.@test timestwo(1, 2) == timestwo(1) + timestwo(2)
-Test.@test mylog(1, 2) == mylog(1) + mylog(2)
+(@line_to_block a = 2 a - 1) == 1
+@double_line_to_block a = a + 1 a = a/2
+Test.@test a == 1
 ```
 """ :(@multiblock)

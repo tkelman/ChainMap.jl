@@ -15,6 +15,15 @@ function nonstandard1(f)
   end
 end
 
+function nonstandard_single1(f)
+  quote
+    macro $f(args)
+      esc($f(args) )
+    end
+  end
+end
+
+
 function multiblock1(f)
   f_chop = Symbol(remove_suffix(string(f), "1"))
   quote
