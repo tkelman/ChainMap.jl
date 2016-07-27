@@ -195,35 +195,17 @@ minus(a, b) = -(a, b)
 binaryfun(a, b, c) = :(\$b(\$a, \$c))
 chainback(a, b, c) = :(\$c(\$b, \$a))
 
-@nonstandard binary chainback
+@nonstandard binaryfun chainback
 
-Test.@test (@binary 1 plus 2) == 3
+Test.@test (@binaryfun 1 plus 2) == 3
 Test.@test (@chainback 2 3 minus) == 1
-```
-""" :(@nonstandard)
-
-@doc """
-    @nonstandard_single(fs...)
-
-The same as [`@nonstandard`](@ref), except that generated macros will take only one
-argument.
-
-#Examples
-```julia
-print_once(f) = :(string(f))
-repeat_twice(f) = :(string(f, " ", f))
-
-@nonstandard_single repeat_once repeat_twice
-
-Test.@test (@repeat_once hi) == "hi"
-Test.@test (@repeat_twice hi) == "hi hi"
 ```
 """ :(@nonstandard)
 
 @doc """
     remove_suffix(suffixed::AbstractString, suffix::AbstractString)
 
-Will remove a `suffix` from `suffixed`.
+Will remove `suffix` from `suffixed`.
 
 #Examples
 ```julia

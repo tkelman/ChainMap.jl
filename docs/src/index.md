@@ -9,7 +9,7 @@ heavily to one-more-minute/Lazy.jl.
 
 Here is a short example to illustrate the chaining mechanism.
 
-```{julia}
+```julia
 readme = @lambda @over @chain begin
   ~_
   -(1)
@@ -33,7 +33,7 @@ See docstrings for more information.
 There is another mechanism of argument storage. This is conceptually the
 inverse of chaining. Here is an example:
 
-```{julia}
+```julia
 function test_function(a, b, c; d = 4)
   a - b + c - d
 end
@@ -63,11 +63,14 @@ package itself. Standard evaluation versions exist for all exported macros.
 If you want shorter versions of the chaining functions for convenience, run the
 code below.
 
-```{julia}
+```julia
 c = ChainMap.chain
 o = ChainMap.over
 l = ChainMap.lambda
 @nonstandard c o l
+
+plus(a, b) = a + b
+Test.@test (@c 1 plus(2) ) == (@chain 1 plus(2) )
 ```
 
 This will create, for example, the `@c` macro as identical to `@chain`.
