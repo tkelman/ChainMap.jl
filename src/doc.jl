@@ -237,7 +237,10 @@ double_line_to_block1(f) = :(\$f; \$f)
 @multiblock line_to_block1 double_line_to_block1
 @nonstandard line_to_block double_line_to_block
 
-Test.@test (@line_to_block a = 2 a - 1) == 1
+a = 2
+@line_to_block a = a + 1 a = a - 1
+Test.@test a === 2
+
 @double_line_to_block a = a + 1 a = a/2
 Test.@test a == 1
 ```
