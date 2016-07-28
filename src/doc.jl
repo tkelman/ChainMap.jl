@@ -17,9 +17,10 @@ Separate single blocks out into lines and recur, return single non-blocks.
 
 `@chain` always substitutes `head` into `\_` in `tail`.
 
-In addition, insertion of `head` to the first argument of `tail` is default.
-Insertion is overridden in two ways: if bare `\_` or `\_...` is an argument to
-`tail`, or if `tail` is a block.
+In addition, insertion of `head` to the first argument of `tail` is default. if
+tail has no arguments, it will be called on head only. Insertion is overridden
+in two ways: if bare `\_` or `\_...` is an argument to `tail`, or if `tail` is a
+block.
 
     @chain head tails...
 
@@ -29,12 +30,15 @@ Reduce `@chain` over `(head, tails...)`.
 ```julia
 plus(a, b) = a + b
 minus(a, b) = a - b
+plusone(a) = a + 1
 
 Test.@test (@chain begin
                      1
                      plus(1)
                    end) ==
            @chain 1 plus(1)
+
+Test.@test (@chain 1 plusone) == plusone(1)
 
 Test.@test (@chain 1 minus(2, _) ) ==
            minus(2, 1)
@@ -84,6 +88,9 @@ functions by wrapping in blocks. To use `~` as a function, use the alias
 # Examples
 
 ```julia
+Test.@test (@over 1) == 1
+Test.@test (@over 1 + 2) == 3
+
 Test.@test (@over +( ~[1, 2], ~[3, 4] ) ) ==
            [1 + 3, 2 + 4]
 

@@ -2,12 +2,15 @@ using ChainMap
 
 plus(a, b) = a + b
 minus(a, b) = a - b
+plusone(a) = a + 1
 
 Test.@test (@chain begin
                      1
                      plus(1)
                    end) ==
            @chain 1 plus(1)
+
+Test.@test (@chain 1 plusone) == plusone(1)
 
 Test.@test (@chain 1 minus(2, _) ) ==
            minus(2, 1)
@@ -31,6 +34,9 @@ Test.@test (@chain 1 minus(2) plus(3) ) ==
            plus(minus(1, 2), 3)
 testlambda = @lambda -(2, _)
 Test.@test  testlambda(1) == -(2, 1)
+Test.@test (@over 1) == 1
+Test.@test (@over 1 + 2) == 3
+
 Test.@test (@over +( ~[1, 2], ~[3, 4] ) ) ==
            [1 + 3, 2 + 4]
 
