@@ -1,22 +1,124 @@
-workspace()
-
 using ChainMap
 
-function run_doctests(filein)
-  text = readlines(filein)
+plus(a, b) = a + b
+minus(a, b) = a - b
 
-  starts = map(_ -> ismatch(r"```.+", chomp(_) ), text)
-  ends = map(_ -> chomp(_) == "```", text)
-  Test.@test sum(starts) == sum(ends)
+Test.@test (@chain begin
+                     1
+                     plus(1)
+                   end) ==
+           @chain 1 plus(1)
 
-  withbounds = text[cumsum(starts) - cumsum(ends) .== 1]
-  withoutbounds = filter(x -> !startswith(x, "```"), withbounds)
-  backslash_removed = map(x -> replace(x, r"\\", ""), withoutbounds)
+Test.@test (@chain 1 minus(2, _) ) ==
+           minus(2, 1)
 
-  tempfile = joinpath(tempdir(), "__tmp.jl")
-  write(tempfile, backslash_removed)
-  include(tempfile)
+Test.@test (@chain 1 plus(2) ) ==
+           plus(1, 2)
+
+Test.@test (@chain begin
+                     1
+                     begin
+                       b = 2
+                       minus(b, _)
+                     end
+                   end) ==
+           begin
+             b = 2
+             minus(b, 1)
+           end
+
+Test.@test (@chain 1 minus(2) plus(3) ) ==
+           plus(minus(1, 2), 3)
+testlambda = @lambda -(2, _)
+Test.@test  testlambda(1) == -(2, 1)
+Test.@test (@over +( ~[1, 2], ~[3, 4] ) ) ==
+           [1 + 3, 2 + 4]
+
+a = [1, 2]
+b = [3, 4]
+c = ( [5, 6], [7, 8] )
+d = 9
+
+Test.@test (@over ~a + ~a + ~b) ==
+           [1 + 1 + 3, 2 + 2 + 4]
+
+Test.@test (@over +(~a, ~d) ) ==
+           [1 + 9, 2 + 9]
+
+Test.@test (@over ~a + ~(c...) ) ==
+           [ [1 + 5 + 7], [2 + 6 + 8] ]
+
+Test.@test (@over begin
+                    e = ~a
+                    e + 1
+                  end ) ==
+            [2, 3]
+Test.@test bitnot(1) == ~1
+a = Arguments(1, 2, a = 3, b = 4)
+Test.@test a.positional ==
+           (1, 2)
+Test.@test a.keyword ==
+           Dict{Symbol, Any}(:a => 3, :b => 4)
+Test.@test (@chain Arguments(1, a = 3) push(2, b = 4) ) ==
+           Arguments(1, 2, a = 3, b = 4)
+Test.@test (@chain Arguments(1, a = 3) unshift(2) ) ==
+           Arguments(2, 1, a = 3)
+testfunction(a, b; c = 4) = a - b + c
+
+Test.@test (@chain Arguments(1, 2, c = 3) run(testfunction) ) ==
+           testfunction(1, 2, c = 3)
+plus(a, b) = +(a, b)
+minus(a, b) = -(a, b)
+
+binaryfun(a, b, c) = :($b($a, $c))
+chainback(a, b, c) = :($c($b, $a))
+
+@nonstandard binaryfun chainback
+
+Test.@test (@binaryfun 1 plus 2) == 3
+Test.@test (@chainback 2 3 minus) == 1
+Test.@test ChainMap.remove_suffix("hi_there", "_there") == "hi"
+Test.@test_throws ErrorException ChainMap.remove_suffix("hi", "and_bye")
+line_to_block1(f) = f
+double_line_to_block1(f) = :($f; $f)
+
+@multiblock line_to_block1 double_line_to_block1
+@nonstandard line_to_block double_line_to_block
+
+(@line_to_block a = 2 a - 1) == 1
+@double_line_to_block a = a + 1 a = a/2
+Test.@test a == 1
+readme = @lambda @over @chain begin
+  ~_
+  -(1)
+  ^(2, _)
+  begin
+    a = _ - 1
+    b = _ + 1
+    (a, b)
+  end
+  sum
 end
 
-run_doctests(joinpath(Pkg.dir("ChainMasrc", "doc.jl"))
-run_doctests(joinpath(Pkg.dir("ChainMap"), "docs", "src", "index.md"))
+Test.@test readme([1, 2]) == [2, 4]
+function test_function(a, b, c; d = 4)
+  a - b + c - d
+end
+
+test_arguments = @chain begin
+  1
+  Arguments
+  push(2, d = 2)
+  unshift(3)
+  run(test_function)
+end
+
+Test.@test test_arguments == test_function(3, 1, 2; d = 2)
+c = ChainMap.chain
+o = ChainMap.over
+l = ChainMap.lambda
+@nonstandard c o l
+
+plus(a, b) = a + b
+Test.@test (@c 1 plus(2) ) == (@chain 1 plus(2) )
+Modules = [ChainMap]
