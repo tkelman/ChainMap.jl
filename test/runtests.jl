@@ -1,24 +1,22 @@
-#using ChainMap
+using ChainMap
 
-#function extract_doctests(filedir)
-  #text = readlines(filedir)
-  #starts = map(_ -> ismatch(r"```.+", chomp(_) ), text)
-  #ends = map(_ -> chomp(_) == "```", text)
-  #Test.@test sum(starts) == sum(ends)
+function run_doctests(filein)
+  text = readlines(filein)
+  starts = map(_ -> ismatch(r"```.+", chomp(_) ), text)
+  ends = map(_ -> chomp(_) == "```", text)
+  Test.@test sum(starts) == sum(ends)
 
-  #withbounds = text[cumsum(starts) - cumsum(ends) .== 1]
-  #withoutbounds = filter(x -> !startswith(x, "```"), withbounds)
-  #backslash_removed = map(x -> replace(x, r"\\", ""), withoutbounds)
-  #blocked = *("begin\n", backslash_removed..., "\nend")
+  withbounds = text[cumsum(starts) - cumsum(ends) .== 1]
+  withoutbounds = filter(x -> !startswith(x, "```"), withbounds)
+  backslash_removed = map(x -> replace(x, r"\\", ""), withoutbounds)
 
-  #parse(blocked)
-#end
+  tempfile = joinpath(tempdir(), "__tmp.jl")
+  write(tempfile, backslash_removed)
+  include(tempfile)
+end
 
-#filedir = joinpath(Pkg.dir("ChainMap"), "docs", "src", "index.md")
-
-#filedir = joinpath(Pkg.dir("ChainMap"), "docs", "src", "index.md")
-#test = eval(extract_doctests(joinpath(Pkg.dir("ChainMap"), "src", "doc.jl")))
-#test = eval(extract_doctests(joinpath(Pkg.dir("ChainMap"), "docs", "src", "index.md")))
+run_doctests(joinpath(Pkg.dir("ChainMap"), "src", "doc.jl"))
+run_doctests(joinpath(Pkg.dir("ChainMap"), "docs", "src", "index.md"))
 
 #Test.@test (@over 1) == 1
 #

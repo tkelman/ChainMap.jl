@@ -203,14 +203,14 @@ Test.@test (@chainback 2 3 minus) == 1
 """ :(@nonstandard)
 
 @doc """
-    remove_suffix(suffixed::AbstractString, suffix::AbstractString)
+    ChainMap.remove_suffix(suffixed::AbstractString, suffix::AbstractString)
 
 Will remove `suffix` from `suffixed`.
 
 #Examples
 ```julia
-Test.@test remove_suffix("hi_there", "_there") == "hi"
-Test.@test_throws ErrorException remove_suffix("hi", "and_bye")
+Test.@test ChainMap.remove_suffix("hi_there", "_there") == "hi"
+Test.@test_throws ErrorException ChainMap.remove_suffix("hi", "and_bye")
 ```
 """ remove_suffix
 
@@ -224,8 +224,9 @@ functions in `fs...`.
 
 # Examples
 ```julia
+f = :(a + 2)
 line_to_block1(f) = f
-double_line_to_block1(f) = :(\$f; \$f)
+double_line_to_block1(f) = :(\f; \f)
 
 @multiblock line_to_block1 double_line_to_block1
 @nonstandard line_to_block double_line_to_block
