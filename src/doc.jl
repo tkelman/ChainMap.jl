@@ -29,8 +29,8 @@ Separate single blocks out into lines and recur, return single non-blocks.
 
 `@chain` always substitutes `head` into `\_` in `tail`.
 
-In addition, insertion of `head` to the first argument of `tail` is default. if
-tail has no arguments, it will be called on head only. Insertion is overridden
+In addition, insertion of `head` to the first argument of `tail` is default. If
+`tail` has no arguments, it will be called on `head` only. Insertion is overridden
 in two ways: if bare `\_` or `\_...` is an argument to `tail`, or if `tail` is a
 block.
 
