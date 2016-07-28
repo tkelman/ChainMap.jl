@@ -99,7 +99,7 @@ Test.@test (@over +(~a, ~d) ) ==
            [1 + 9, 2 + 9]
 
 Test.@test (@over ~a + ~(c...) ) ==
-           [ [1 + 5 + 7], [2 + 6 + 8] ]
+           [ 1 + 5 + 7, 2 + 6 + 8 ]
 
 Test.@test (@over begin
                     e = ~a
