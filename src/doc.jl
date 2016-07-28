@@ -224,9 +224,8 @@ functions in `fs...`.
 
 # Examples
 ```julia
-f = :(a + 2)
 line_to_block1(f) = f
-double_line_to_block1(f) = :(\f; \f)
+double_line_to_block1(f) = :(\$f; \$f)
 
 @multiblock line_to_block1 double_line_to_block1
 @nonstandard line_to_block double_line_to_block
