@@ -237,7 +237,7 @@ double_line_to_block1(f) = :(\$f; \$f)
 @multiblock line_to_block1 double_line_to_block1
 @nonstandard line_to_block double_line_to_block
 
-(@line_to_block a = 2 a - 1) == 1
+Test.@test (@line_to_block a = 2 a - 1) == 1
 @double_line_to_block a = a + 1 a = a/2
 Test.@test a == 1
 ```
@@ -255,4 +255,4 @@ Create shorter versions of exported macros, specifically, `@c` for `@chain`,
 plus(a, b) = a + b
 Test.@test (@c 1 plus(2) ) == (@chain 1 plus(2) )
 ```
-"""
+""" :(@make_aliases)
