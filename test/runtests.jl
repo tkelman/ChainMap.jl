@@ -132,4 +132,3 @@ test_arguments = @chain begin
 end
 
 Test.@test test_arguments == test_function(3, 1, 2; d = 2)
-Modules = [ChainMap]

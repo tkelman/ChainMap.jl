@@ -1,9 +1,9 @@
-# ChainMap.jl Documentation
+# ChainMap.jl
 
 This package attempts to integrate mapping and chaining. The chaining code owes
 heavily to one-more-minute/Lazy.jl.
 
-## Read Me
+## Read me
 
 ### Chaining
 
@@ -28,7 +28,7 @@ Test.@test readme([1, 2]) == [2, 4]
 Three macros, `@chain`, `@lambda`, and `@over`, are included in this mechanism.
 See docstrings for more information.
 
-### Argument Building
+### Argument building
 
 There is another mechanism of argument storage. This is conceptually the
 inverse of chaining. Here is an example:
@@ -61,7 +61,7 @@ package itself. Standard evaluation versions exist for all exported macros.
 ### Aliasing
 
 If you want shorter versions of the chaining functions for convenience, run the
-code `@make_aliases` macro. This will create, for example, the `@c` macro as
+`@make_aliases` macro. This will create, for example, the `@c` macro as
 identical to `@chain`.
 
 ## Index of exports
