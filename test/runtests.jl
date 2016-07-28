@@ -100,6 +100,9 @@ double_line_to_block1(f) = :($f; $f)
 (@line_to_block a = 2 a - 1) == 1
 @double_line_to_block a = a + 1 a = a/2
 Test.@test a == 1
+@make_aliases
+plus(a, b) = a + b
+Test.@test (@c 1 plus(2) ) == (@chain 1 plus(2) )
 readme = @lambda @over @chain begin
   ~_
   -(1)
@@ -126,11 +129,4 @@ test_arguments = @chain begin
 end
 
 Test.@test test_arguments == test_function(3, 1, 2; d = 2)
-c = ChainMap.chain
-o = ChainMap.over
-l = ChainMap.lambda
-@nonstandard c o l
-
-plus(a, b) = a + b
-Test.@test (@c 1 plus(2) ) == (@chain 1 plus(2) )
 Modules = [ChainMap]

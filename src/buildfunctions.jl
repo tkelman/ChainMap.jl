@@ -31,3 +31,11 @@ function safe1(f)
       $f(copy(x), args...; kwargs...)
   end
 end
+
+make_aliases() =
+  quote
+    c = ChainMap.chain
+    o = ChainMap.over
+    l = ChainMap.lambda
+    ChainMap.@nonstandard c o l
+  end

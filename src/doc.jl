@@ -242,3 +242,17 @@ double_line_to_block1(f) = :(\$f; \$f)
 Test.@test a == 1
 ```
 """ :(@multiblock)
+
+@doc """
+    @make_aliases
+
+Create shorter versions of exported macros, specifically, `@c` for `@chain`,
+`@l` for `@lambda`, and `@o` for `@over`.
+
+# Examples
+```julia
+@make_aliases
+plus(a, b) = a + b
+Test.@test (@c 1 plus(2) ) == (@chain 1 plus(2) )
+```
+"""

@@ -4,5 +4,5 @@ eval(nonstandard1(:nonstandard1))
 @nonstandard1 multiblock
 @multiblock nonstandard1 safe1
 @nonstandard1 nonstandard
-@nonstandard over lambda safe chain
+@nonstandard over lambda safe chain make_aliases
 @safe push! unshift!

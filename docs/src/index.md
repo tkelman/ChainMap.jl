@@ -61,19 +61,8 @@ package itself. Standard evaluation versions exist for all exported macros.
 ### Aliasing
 
 If you want shorter versions of the chaining functions for convenience, run the
-code below.
-
-```julia
-c = ChainMap.chain
-o = ChainMap.over
-l = ChainMap.lambda
-@nonstandard c o l
-
-plus(a, b) = a + b
-Test.@test (@c 1 plus(2) ) == (@chain 1 plus(2) )
-```
-
-This will create, for example, the `@c` macro as identical to `@chain`.
+code `@make_aliases` macro. This will create, for example, the `@c` macro as
+identical to `@chain`.
 
 ## Index of exports
 
