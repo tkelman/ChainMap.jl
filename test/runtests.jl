@@ -1,5 +1,13 @@
 using ChainMap
 
+push1!(a) = push!(a, 1)
+push2!(a) = push!(a, 2)
+
+@safe push1! push2!
+a = [0]
+b = [0, 1, 2]
+c = @chain a push1 push2
+Test.@test a != b == c
 plus(a, b) = a + b
 minus(a, b) = a - b
 plusone(a) = a + 1
@@ -83,8 +91,6 @@ chainback(a, b, c) = :($c($b, $a))
 
 Test.@test (@binaryfun 1 plus 2) == 3
 Test.@test (@chainback 2 3 minus) == 1
-Test.@test ChainMap.remove_suffix("hi_there", "_there") == "hi"
-Test.@test_throws ErrorException ChainMap.remove_suffix("hi", "and_bye")
 line_to_block1(f) = f
 double_line_to_block1(f) = :($f; $f)
 

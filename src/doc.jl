@@ -6,6 +6,18 @@ first positional argument before processing.
 
 The new function will have a name without !, like `push`. Can be used on
 multiple functions.
+
+# Examples
+```julia
+push1!(a) = push!(a, 1)
+push2!(a) = push!(a, 2)
+
+@safe push1! push2!
+a = [0]
+b = [0, 1, 2]
+c = @chain a push1 push2
+Test.@test a != b == c
+```
 """ :(@safe)
 
 @doc """
@@ -208,18 +220,6 @@ Test.@test (@binaryfun 1 plus 2) == 3
 Test.@test (@chainback 2 3 minus) == 1
 ```
 """ :(@nonstandard)
-
-@doc """
-    ChainMap.remove_suffix(suffixed::AbstractString, suffix::AbstractString)
-
-Will remove `suffix` from `suffixed`.
-
-#Examples
-```julia
-Test.@test ChainMap.remove_suffix("hi_there", "_there") == "hi"
-Test.@test_throws ErrorException ChainMap.remove_suffix("hi", "and_bye")
-```
-""" remove_suffix
 
 @doc """
     @multiblock(fs...)
