@@ -1,11 +1,11 @@
 @doc """
     @safe(fs...)
 
-Defines a new version of mutate-in-place functions like `push!` that copies the
-first positional argument before processing.
+Defines a safe version of mutate-in-place functions like `push!`.
 
-The new function will have a name without !, like `push`. Can be used on
-multiple functions.
+Original functions must end in "!". New functions will have a name without !,
+like `push`, and will copy the first positional argument before processing. Can
+be used on multiple functions.
 
 # Examples
 ```julia
@@ -17,6 +17,8 @@ a = [0]
 b = [0, 1, 2]
 c = @chain a push1 push2
 Test.@test a != b == c
+
+Test.@test_throws ErrorException ChainMap.safe(:push1)
 ```
 """ :(@safe)
 
@@ -93,9 +95,9 @@ Test.@test  testlambda(1) == -(2, 1)
 Interprets e as a function to broadcast with, and expressions wrapped with
 tildas as objects to broadcast over.
 
-You can also map over splatted arguments, but only one. Make multi-line
-functions by wrapping in blocks. To use `~` as a function, use the alias
-`bitnot`.
+You can also map over splatted arguments, but *only one*. Make
+multi-line functions by wrapping in blocks. To use `~` as a
+function, use the alias `bitnot`.
 
 # Examples
 
@@ -125,6 +127,10 @@ Test.@test (@over begin
                     e + 1
                   end ) ==
             [2, 3]
+
+Test.@test_throws ErrorException ChainMap.over(:(
+  ~(a...) + ~(b...)
+))
 ```
 """  :(@over)
 

@@ -17,25 +17,13 @@ end
 
 function multiblock1(f)
   f_chop = Symbol(remove_suffix(string(f), "1"))
-  quote
-    function $f_chop(fs...)
-      Expr(:block, map($f, fs)...)
-    end
-  end
+  quote function $f_chop(fs...); Expr(:block, map($f, fs)...); end end
 end
 
 function safe1(f)
   f_chop = Symbol(remove_suffix(string(f), "!"))
-  quote
-    $f_chop(x, args...; kwargs...) =
-      $f(copy(x), args...; kwargs...)
-  end
+  quote $f_chop(x, args...; kwargs...) = $f(copy(x), args...; kwargs...) end
 end
 
 make_aliases() =
-  quote
-    c = ChainMap.chain
-    o = ChainMap.over
-    l = ChainMap.lambda
-    ChainMap.@nonstandard c o l
-  end
+  quote c = ChainMap.chain; o = ChainMap.over; l = ChainMap.lambda; ChainMap.@nonstandard c o l end

@@ -8,6 +8,8 @@ a = [0]
 b = [0, 1, 2]
 c = @chain a push1 push2
 Test.@test a != b == c
+
+Test.@test_throws ErrorException ChainMap.safe(:push1)
 plus(a, b) = a + b
 minus(a, b) = a - b
 plusone(a) = a + 1
@@ -67,6 +69,10 @@ Test.@test (@over begin
                     e + 1
                   end ) ==
             [2, 3]
+
+Test.@test_throws ErrorException ChainMap.over(:(
+  ~(a...) + ~(b...)
+))
 Test.@test bitnot(1) == ~1
 a = Arguments(1, 2, a = 3, b = 4)
 Test.@test a.positional ==
