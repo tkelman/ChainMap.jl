@@ -8,11 +8,7 @@ function remove_suffix(suffixed::AbstractString, suffix::AbstractString)
 end
 
 function nonstandard1(f)
-  quote
-    macro $f(args...)
-      esc($f(args...) )
-    end
-  end
+  quote macro $f(args...); esc($f(args...) ); end; end
 end
 
 function multiblock1(f)
@@ -25,5 +21,6 @@ function safe1(f)
   quote $f_chop(x, args...; kwargs...) = $f(copy(x), args...; kwargs...) end
 end
 
-make_aliases() =
+function make_aliases()
   quote c = ChainMap.chain; o = ChainMap.over; l = ChainMap.lambda; ChainMap.@nonstandard c o l end
+end
