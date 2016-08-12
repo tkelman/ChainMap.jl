@@ -111,8 +111,9 @@ test_function(a, b) = vcat(a, b)
 @test (@chain begin
                   collect_call(test_function, [1, 2], [3, 4])
                   run(map)
+                  vcat(_...)
               end) ==
-      [ [1, 3], [2, 4] ]
+      [ 1, 3, 2, 4 ]
 ```
 """
 collect_call(f, positional...; keyword...) =
@@ -138,8 +139,9 @@ Test.@test (@chain begin
                  collect_call(vcat, [1, 2], [3, 4])
                  collect_arguments(map)
                  run
+                 vcat(_...)
              end) ==
-      [ [1, 3], [2, 4] ]
+      [ 1, 3, 2, 4 ]
 ```
 """
 Base.run(a::Arguments) = run(a, run)
@@ -189,14 +191,13 @@ the standard position for functional programming, then call `f` on the result.
 
 # Examples
 ```julia
-test_function(a, b) = vcat(a, b)
-
 @test (@chain begin
                   collect_arguments([1, 2], [3,4])
-                  LazyCall(test_function)
+                  LazyCall(vcat)
                   run(map)
+                  vcat(_...)
               end) ==
-      [ [1, 3], [2, 4] ]
+      [ 1, 3, 2, 4 ]
 ```
 """
 Base.run(l::LazyCall, f::Function) =

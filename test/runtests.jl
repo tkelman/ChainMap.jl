@@ -21,14 +21,16 @@ test_function(a, b) = vcat(a, b)
 @test (@chain begin
                   collect_call(test_function, [1, 2], [3, 4])
                   run(map)
+                  vcat(_...)
               end) ==
-      [ [1, 3], [2, 4] ]
+      [ 1, 3, 2, 4 ]
 Test.@test (@chain begin
                  collect_call(vcat, [1, 2], [3, 4])
                  collect_arguments(map)
                  run
+                 vcat(_...)
              end) ==
-      [ [1, 3], [2, 4] ]
+      [ 1, 3, 2, 4 ]
 test_function(a, b; c = 4) = a - b + c
 
 @test (@chain begin
@@ -44,14 +46,13 @@ test_function(a, b; c = 4) = a - b + c
                   run(test_function)
               end) ==
       test_function(1, 2, c = 3)
-test_function(a, b) = vcat(a, b)
-
 @test (@chain begin
                   collect_arguments([1, 2], [3,4])
-                  LazyCall(test_function)
+                  LazyCall(vcat)
                   run(map)
+                  vcat(_...)
               end) ==
-      [ [1, 3], [2, 4] ]
+      [ 1, 3, 2, 4 ]
 @test ( @lazy_call +(1, 2) ) ==
       collect_call(+, 1, 2)
 
