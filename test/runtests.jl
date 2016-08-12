@@ -86,6 +86,11 @@ b = ( [5, 6], [7, 8] )
               end) ==
       [ [1, 1, 3, 5, 7], [2, 2, 4, 6, 8] ]
 @test bitnot(1) == ~1
+binaryfun(a, b, c) = :($b($a, $c))
+chainback(a, b, c) = :($c($b, $a))
+@nonstandard binaryfun chainback
+@test (@binaryfun 1 vcat 2) == vcat(1, 2)
+@test (@chainback 2 3 vcat) == vcat(3, 2)
 ChainMap.run(l::LazyCall,
              map_call::typeof(map),
              slice_call::LazyCall{typeof(slice)},
