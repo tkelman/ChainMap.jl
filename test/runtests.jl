@@ -91,23 +91,40 @@ chainback(a, b, c) = :($c($b, $a))
 @nonstandard binaryfun chainback
 @test (@binaryfun 1 vcat 2) == vcat(1, 2)
 @test (@chainback 2 3 vcat) == vcat(3, 2)
+@test (@chain begin
+           collect_arguments(1)
+           @push_block begin
+               2
+               a = 3 end end) ==
+      push(collect_arguments(1), 2, a = 3)
+@test (@chain begin
+           1
+           @arguments_block begin
+               2
+               a = 3 end end) ==
+      collect_arguments(1, 2, a = 3)
 ChainMap.run(l::LazyCall,
              map_call::typeof(map),
-             slice_call::LazyCall{typeof(slice)},
-             reduce_call::LazyCall{typeof(reduce)}) =
+             slice_call::LazyCall{typeof(slice)}) =
+    mapslices(l.function_call, l.arguments.positional[1],
+              slice_call.arguments.positional[1] )
+
+Base.run(l::LazyCall,
+         map_call::typeof(map),
+         slice_call::LazyCall{typeof(slice)},
+         reduce_call::LazyCall{typeof(reduce)}) =
     mapreducedim(l.function_call, reduce_call.arguments.positional[1],
                  l.arguments.positional[1], slice_call.arguments.positional[1] )
 fancy = @chain begin
     [1, 2, 3, 4]
     reshape(2, 2)
     begin @unweave (~_ + 1)/~_ end
-    collect_arguments
-    push( map )
-    push( @lazy_call slice(1) )
-    push( @lazy_call reduce(+) )
+    @arguments_block begin
+        map
+        @lazy_call slice(1)
+        @lazy_call reduce(+)
+    end
     run
 end
-
-boring = mapreducedim(x -> (x + 1)/x, +, reshape([1, 2, 3, 4], 2, 2), 1)
 
 @test fancy == boring

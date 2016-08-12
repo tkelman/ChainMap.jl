@@ -5,7 +5,7 @@ function insert_(e)
     end
 
     MacroTools.@match e begin
-      @a_(b__) => :( $a( _, $( b... ) ) )
+      @a_(b__) => Expr(:macrocall, a, :_, b...)
       a_(b__) => :( $a( _, $( b... ) ) )
       a_ => a
     end

@@ -4,7 +4,7 @@ function nonstandard1(f)
       macro $f(args...)
           esc($f(args...) )
       end
-      @doc (@doc $f) $macro_f
+      @doc (@doc $f) :($macro_f)
   end
 end
 
@@ -27,8 +27,57 @@ chainback(a, b, c) = :(\$c(\$b, \$a))
 """
 nonstandard(fs...) = Expr(:block, map(nonstandard1, fs)...)
 
+function break_up_block(e)
+     if MacroTools.isexpr(e, :block)
+         break_up_blocks(e.args...)
+     elseif MacroTools.isexpr(e, :(=))
+         Expr(:kw, e.args...)
+     else
+         e
+     end
+ end
+
+break_up_blocks(es...) = vcat(map(break_up_block, es)...)
+
+"""
+   @push_block(es...)
+
+Will break up any begin blocks in `es`, create keyword arguments from
+assignments, and feed them to `push`
+
+#Examples
+```julia
+@test (@chain begin
+           collect_arguments(1)
+           @push_block begin
+               2
+               a = 3 end end) ==
+      push(collect_arguments(1), 2, a = 3)
+```
+"""
+push_block(es...) = Expr(:call, :push, break_up_blocks(es...)...)
+
+"""
+    @arguments_block(es...)
+
+Will break up any begin blocks in `es` into lines, create keyword arguments from
+assignments, and feed all arguments to `collect_arguments`
+
+#Examples
+```julia
+@test (@chain begin
+           1
+           @arguments_block begin
+               2
+               a = 3 end end) ==
+      collect_arguments(1, 2, a = 3)
+```
+"""
+arguments_block(es...) =
+     Expr(:call, :collect_arguments, break_up_blocks(es...)...)
+
 export @nonstandard
 eval(nonstandard(:nonstandard))
 
-export @chain, @unweave, @lazy_call
-@nonstandard chain unweave lazy_call
+export @chain, @unweave, @lazy_call, @push_block, @arguments_block
+@nonstandard chain unweave lazy_call push_block arguments_block
