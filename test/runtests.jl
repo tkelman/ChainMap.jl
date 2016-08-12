@@ -20,11 +20,7 @@ test_function(a, b) = vcat(a, b)
 
 @test (@chain begin
                   collect_call(test_function, [1, 2], [3, 4])
-<<<<<<< HEAD
                   run(map)
-=======
-                  run(broadcast)
->>>>>>> be12457285bd70eac87889cba20207ea60b335b0
               end) ==
       [ [1, 3], [2, 4] ]
 Test.@test (@chain begin
