@@ -11,7 +11,7 @@ end
 @doc unweave :(@unweave)
 
 export @lazy_call
-@doc lazy_call :(@lazy_call)
 macro lazy_call(es...)
     esc(ChainMap.lazy_call(es...))
 end
+@doc lazy_call :(@lazy_call)
