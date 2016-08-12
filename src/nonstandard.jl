@@ -1,11 +1,18 @@
+function nonstandard1(f)
+  macro_f = Expr(:quote, Expr(:macrocall, Symbol("@" * string(f))))
+  quote
+      @doc (@doc $f) $macro_f
+      macro $f(args...)
+          esc($f(args...) )
+      end
+  end
+end
+
+nonstandard(fs...) = Expr(:block, map(nonstandard1, fs)...)
 
 
-
-
-
-
-@doc run
-
+export @nonstandard
+eval(nonstandard(:nonstandard))
 @doc """
     @nonstandard(fs...)
 
@@ -23,7 +30,10 @@ chainback(a, b, c) = :(\$c(\$b, \$a))
 
 @nonstandard binaryfun chainback
 
-@test (@binaryfun 1 p 2) == 3
-@test (@chainback 2 3 minus) == 1
+@test (@binaryfun 1 vcat 2) == vcat(1, 2)
+@test (@chainback 2 3 vcat) == vcat(3, 2)
 ```
 """ :(@nonstandard)
+
+export @chain, @unweave, @lazy_call
+@nonstandard chain unweave lazy_call
