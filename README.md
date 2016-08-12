@@ -22,8 +22,8 @@ ChainMap.run(l::LazyCall,
              map_call::typeof(map),
              slice_call::LazyCall{typeof(slice)},
              reduce_call::LazyCall{typeof(reduce)}) =
-    mapreducedim(l.function_call, reduce_call.arguments[1], l.arguments.positional[1],
-                 slice_call.arguments.positional[1] )
+    mapreducedim(l.function_call, reduce_call.arguments.positional[1],
+                 l.arguments.positional[1], slice_call.arguments.positional[1] )
 ```
 
 Now put it into action!
