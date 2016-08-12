@@ -109,10 +109,10 @@ Easy way to build an `LazyCall` type.
 test_function(a, b) = vcat(a, b)
 
 @test (@chain begin
-                  collect_call(test_function, [1, 2], [3])
-                  run(broadcast)
+                  collect_call(test_function, [1, 2], [3, 4])
+                  run(map)
               end) ==
-      [ [1, 3], [2, 3] ]
+      [ [1, 3], [2, 4] ]
 ```
 """
 collect_call(f, positional...; keyword...) =
@@ -135,11 +135,11 @@ Call `run` on the arguments in `a`
 # Examples
 ```julia
 Test.@test (@chain begin
-                 collect_call(+, [1, 2], [3, 4])
+                 collect_call(vcat, [1, 2], [3, 4])
                  collect_arguments(map)
                  run
              end) ==
-      [4, 6]
+      [ [1, 3], [2, 4] ]
 ```
 """
 Base.run(a::Arguments) = run(a, run)
@@ -192,11 +192,11 @@ the standard position for functional programming, then call `f` on the result.
 test_function(a, b) = vcat(a, b)
 
 @test (@chain begin
-                  collect_arguments([1, 2], [3])
+                  collect_arguments([1, 2], [3,4])
                   LazyCall(test_function)
-                  run(broadcast)
+                  run(map)
               end) ==
-      [ [1, 3], [2, 3] ]
+      [ [1, 3], [2, 4] ]
 ```
 """
 Base.run(l::LazyCall, f::Function) =
