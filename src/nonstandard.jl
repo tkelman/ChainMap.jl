@@ -4,7 +4,7 @@ function nonstandard1(f)
       macro $f(args...)
           esc($f(args...) )
       end
-      @doc (@doc $f) :($macro_f)
+      @doc (@doc $f) $macro_f
   end
 end
 
@@ -29,7 +29,7 @@ nonstandard(fs...) = Expr(:block, map(nonstandard1, fs)...)
 
 function break_up_block(e)
      if MacroTools.isexpr(e, :block)
-         break_up_blocks(e.args...)
+         break_up_blocks(MacroTools.rmlines(e).args...)
      elseif MacroTools.isexpr(e, :(=))
          Expr(:kw, e.args...)
      else

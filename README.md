@@ -48,6 +48,8 @@ fancy = @chain begin
     run
 end
 
+boring = mapreducedim(x -> (x + 1)/x, +, reshape([1, 2, 3, 4], 2, 2), 1)
+
 @test fancy == boring
 ```
 
