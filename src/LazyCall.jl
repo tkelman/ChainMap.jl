@@ -109,7 +109,7 @@ Easy way to build an `LazyCall` type.
 test_function(a, b) = vcat(a, b)
 
 @test (@chain begin
-                  collect_call(test_function, [1, 2], 3)
+                  collect_call(test_function, [1, 2], [3])
                   run(broadcast)
               end) ==
       [ [1, 3], [2, 3] ]
@@ -192,7 +192,7 @@ the standard position for functional programming, then call `f` on the result.
 test_function(a, b) = vcat(a, b)
 
 @test (@chain begin
-                  collect_arguments([1, 2], 3)
+                  collect_arguments([1, 2], [3])
                   LazyCall(test_function)
                   run(broadcast)
               end) ==
