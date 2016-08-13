@@ -9,13 +9,15 @@ function nonstandard1(f)
 end
 
 """
-   @nonstandard(fs...)
-Will create a nonstandard evaluation macro for each of the fs functions.
+    @nonstandard(fs...)
+
+Will create a nonstandard evaluation macro for each of the `fs` functions.
 
 Each function should be a function that takes and returns expressions. The
 nonstandard macro will have the same name but will take in code, not
 expressions, and will evaluate the result locally when the macro is called. Will
 copy over the docstrings from the standard version to the nonstandard version.
+
 #Examples
 ```julia
 binaryfun(a, b, c) = :(\$b(\$a, \$c))
@@ -79,5 +81,5 @@ arguments_block(es...) =
 export @nonstandard
 eval(nonstandard(:nonstandard))
 
-export @chain, @unweave, @lazy_call, @push_block, @arguments_block
+export @chain,s @unweave, @lazy_call, @push_block, @arguments_block
 @nonstandard chain unweave lazy_call push_block arguments_block

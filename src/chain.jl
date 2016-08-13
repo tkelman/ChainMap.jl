@@ -25,7 +25,8 @@ If
 
 `_` will be first be inserted as the first argument to `tail`.
 
-To prevent insertion, wrap `tail` in a `begin` block.
+To prevent insertion into the first argument, but still insert into `_`,
+wrap `tail` in a `begin` block.
 
 # Examples
 ```julia
@@ -38,8 +39,7 @@ To prevent insertion, wrap `tail` in a `begin` block.
 @test ( @chain (2, 1) vcat(3, _...) ) ==
       vcat(3, 2, 1)
 
-@test ( @chain 1 begin vcat(2) end ) ==
-      vcat(2)
+@test ( @chain 1 begin -(3, 2 + _) end ) == 0
 ```
 """
 chain(head, tail::Expr) = expose(insert_(tail), head)

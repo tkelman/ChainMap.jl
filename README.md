@@ -14,9 +14,9 @@ heavily to one-more-minute/Lazy.jl.
 
 ## Fun example
 
-Here is a fun example which includes all the main feature of this package.
-First, design custom methods of combining function calls into a new function
-calls.
+Here is a fun example which includes some of the main feature of this package.
+First, design a custom method of combining function calls into a new function
+call.
 
 ```julia
 ChainMap.run(l::LazyCall,

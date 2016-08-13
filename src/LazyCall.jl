@@ -102,14 +102,12 @@ export collect_call
 """
     collect_call(f::Function, positional...; keyword...)
 
-Easy way to build an `LazyCall` type.
+Easy way to build a `LazyCall` type.
 
 # Examples
 ```julia
-test_function(a, b) = vcat(a, b)
-
 @test (@chain begin
-                  collect_call(test_function, [1, 2], [3, 4])
+                  collect_call(vcat, [1, 2], [3, 4])
                   run(map)
                   vcat(_...)
               end) ==
