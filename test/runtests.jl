@@ -16,10 +16,8 @@ end
 a = collect_arguments(1, 2, a = 3, b = 4)
 @test a.positional == (1, 2)
 @test a.keyword == Dict{Symbol, Any}(:a => 3, :b => 4)
-test_function(a, b) = vcat(a, b)
-
 @test (@chain begin
-                  collect_call(test_function, [1, 2], [3, 4])
+                  collect_call(vcat, [1, 2], [3, 4])
                   run(map)
                   vcat(_...)
               end) ==
@@ -66,8 +64,7 @@ test_function(a, b; c = 4) = a - b + c
 @test ( @chain (2, 1) vcat(3, _...) ) ==
       vcat(3, 2, 1)
 
-@test ( @chain 1 begin vcat(2) end ) ==
-      vcat(2)
+@test ( @chain 1 begin -(3, 2 + _) end ) == 0
 @test (@chain 1 vcat) == vcat(1)
 @test (@chain begin
                   1
