@@ -81,5 +81,5 @@ arguments_block(es...) =
 export @nonstandard
 eval(nonstandard(:nonstandard))
 
-export @chain,s @unweave, @lazy_call, @push_block, @arguments_block
+export @chain, @unweave, @lazy_call, @push_block, @arguments_block
 @nonstandard chain unweave lazy_call push_block arguments_block
