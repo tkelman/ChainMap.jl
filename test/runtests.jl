@@ -84,8 +84,9 @@ b = ( [5, 6], [7, 8] )
 @test (@chain begin
                   @unweave vcat(~a, ~a, ~[3, 4], ~(b...) )
                   run(map)
+                  vcat(_...)
               end) ==
-      [ [1, 1, 3, 5, 7], [2, 2, 4, 6, 8] ]
+      [1, 1, 3, 5, 7, 2, 2, 4, 6, 8]
 @test bitnot(1) == ~1
 binaryfun(a, b, c) = :($b($a, $c))
 chainback(a, b, c) = :($c($b, $a))

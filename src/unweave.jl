@@ -53,8 +53,9 @@ b = ( [5, 6], [7, 8] )
 @test (@chain begin
                   @unweave vcat(~a, ~a, ~[3, 4], ~(b...) )
                   run(map)
+                  vcat(_...)
               end) ==
-      [ [1, 1, 3, 5, 7], [2, 2, 4, 6, 8] ]
+      [1, 1, 3, 5, 7, 2, 2, 4, 6, 8]
 ```
 """
 function unweave(e::Expr)
