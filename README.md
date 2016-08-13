@@ -19,12 +19,6 @@ First, design a custom method of combining function calls into a new function
 call.
 
 ```julia
-ChainMap.run(l::LazyCall,
-             map_call::typeof(map),
-             slice_call::LazyCall{typeof(slice)}) =
-    mapslices(l.function_call, l.arguments.positional[1],
-              slice_call.arguments.positional[1] )
-
 Base.run(l::LazyCall,
          map_call::typeof(map),
          slice_call::LazyCall{typeof(slice)},
