@@ -137,6 +137,8 @@ fancy = @chain begin
 end
 
 boring = map((a, c, b...) -> vcat(a, a, c, b...), A, [3, 4], B...)
+
+@test fancy == boring
 along() = "dummy function; could be a fancy view some day"
 
 Base.run(A::AbstractArray,
