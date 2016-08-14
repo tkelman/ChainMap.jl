@@ -1,7 +1,7 @@
 using Documenter, ChainMap
 
 makedocs(
-  modules = ChainMap,
+  modules = ChainMap
 )
 
 deploydocs(

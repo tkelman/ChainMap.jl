@@ -12,37 +12,52 @@ heavily to one-more-minute/Lazy.jl.
 - [**STABLE**][docs-stable_url] &mdash; **most recently tagged version of the documentation.**
 - [**LATEST**][docs-latest_url] &mdash; *in-development version of the documentation.*
 
-## Fun example
+## Examples
 
-Here is a fun example which includes some of the main feature of this package.
-First, design a custom method of combining function calls into a new function
-call.
+### Example 1
 
 ```julia
-Base.run(l::LazyCall,
-         map_call::typeof(map),
-         slice_call::LazyCall{typeof(slice)},
-         reduce_call::LazyCall{typeof(reduce)}) =
-    mapreducedim(l.function_call, reduce_call.arguments.positional[1],
-                 l.arguments.positional[1], slice_call.arguments.positional[1] )
+A = [1, 2]
+B = [3, 4]
+
+fancy = @chain begin
+    A
+    map(x -> x + 1, _)
+    begin @unweave vcat(~_, ~B, ~[5, 6] ) end
+    run(map)
+end
+
+boring = map((a, b, c) -> vcat(a, b, c), map(x -> x + 1, A), B, [5, 6])
+
+@test fancy == boring
 ```
 
-Now put it into action!
+### Example 2
 
 ```julia
+along() = "dummy function; could be a fancy view some day"
+
+Base.run(A::AbstractArray,
+         map_call::typeof(map), map_function::Function,
+         along_call::LazyCall{typeof(along)},
+         reduce_call::typeof(reduce), reduce_function::Function) =
+    mapreducedim(map_function, reduce_function, A,
+                 along_call.arguments.positional[1] )
+
 fancy = @chain begin
     [1, 2, 3, 4]
     reshape(2, 2)
-    begin @unweave (~_ + 1)/~_ end
     @arguments_block begin
         map
-        @lazy_call slice(1)
-        @lazy_call reduce(+)
+        x -> x + 1
+        @lazy_call along(1)
+        reduce
+        +
     end
     run
 end
 
-boring = mapreducedim(x -> (x + 1)/x, +, reshape([1, 2, 3, 4], 2, 2), 1)
+boring = mapreducedim(x -> x + 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
 
 @test fancy == boring
 ```
