@@ -1,13 +1,12 @@
 function nonstandard1(f)
   symbol_f = Symbol("@" * string(f) )
   macro_f = Expr(:quote, Expr(:macrocall, symbol_f))
-  string_f = "Nonstandard evaluation version of [`$symbol_f`](@ref)"
+  string_f = "See documentation of [`$f`](@ref)"
   quote
       macro $f(args...)
           esc($f(args...) )
       end
-      @doc (@doc $f) $macro_f
-      @doc $string_f $f
+      @doc $string_f $macro_f
   end
 end
 
@@ -19,9 +18,10 @@ Will create a nonstandard evaluation macro for each of the `fs` functions.
 Each function should be a function that takes and returns expressions. The
 nonstandard macro will have the same name but will take in code, not
 expressions, and will evaluate the result locally when the macro is called. Will
-copy over the docstrings from the standard version to the nonstandard version.
+write a docstring for the nonstandard version pointing to the documentation of
+the standard version.
 
-#Examples
+# Examples
 ```julia
 "Docstring for @binaryfun"
 binaryfun(a, b, c) = :(\$b(\$a, \$c))
@@ -54,7 +54,7 @@ break_up_blocks(es...) = vcat(map(break_up_block, es)...)
 Will break up any begin blocks in `es`, create keyword arguments from
 assignments, and feed them to `push`
 
-#Examples
+# Examples
 ```julia
 push_test = @chain begin
     1
@@ -76,7 +76,7 @@ push_block(es...) = Expr(:call, :push, break_up_blocks(es...)...)
 Will break up any begin blocks in `es` into lines, create keyword arguments from
 assignments, and feed all arguments to `collect_arguments`
 
-#Examples
+# Examples
 ```julia
 arguments_test = @chain begin
     1
