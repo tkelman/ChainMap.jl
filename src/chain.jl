@@ -16,16 +16,16 @@ expose(tail, head) = :(let _ = $head; $tail; end)
 """
     @chain head tail::Expr
 
-`@chain` always substitutes `head` into `\_` in `tail`.
+`@chain` always reinterprets `\_` in `tail` as `head`.
 
 If
 
 - tail can be recognized as a function call or a macro call, and
 - neither bare `\_` nor `\_...` is a positional argument to `tail`
 
-`_` will be first be inserted as the first argument to `tail`.
+`_` will be inserted as the first argument to `tail`.
 
-To prevent insertion into the first argument, but still insert into `_`,
+To prevent insertion into the first argument, but still reinterpret `_`,
 wrap `tail` in a `begin` block.
 
 # Examples
@@ -59,24 +59,27 @@ chain(head, tail) = :($tail($head))
 """
     @chain e::Expr
 
-Separate single begin blocks out into lines and recur. Return single non-blocks as is.
+Separate single begin blocks out into lines and recur. Throws an error if `e` is not
+a begin block.
 
 # Examples
 ```julia
-@test (@chain begin
-                  1
-                  vcat(2)
-               end) ==
-      @chain 1 vcat(2)
+chain_block = @chain begin
+    1
+    vcat(2)
+end
 
-@test (@chain 1 + 1) == 2
+@test chain_block == @chain 1 vcat(2)
+
+# Cannot chain only one argument
+@test_throws ErrorException ChainMap.chain(:(1 + 1))
 ```
 """
 chain(e::Expr) =
     if e.head == :block
         chain(MacroTools.rmlines(e).args...)
     else
-        e
+        error("Cannot chain only one argument")
     end
 
 """

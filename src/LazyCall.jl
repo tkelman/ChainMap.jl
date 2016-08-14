@@ -20,6 +20,24 @@ Convert `keyword` to a `Dict` before creating Arguments type.
 Arguments(positional::Tuple, keyword::Vector) =
     Arguments(positional, Dict(keyword))
 
+"""
+    merge(a::Arguments, b::Arguments)
+
+Merge two `Arguments` types.
+
+Positional arguments are added at the end, and new keyword arguments are added
+to old keyword arguments, or, if the keys match, overwrite them.
+
+# Examples
+```julia
+merge_test = @chain begin
+    collect_arguments(1, a = 2, b = 3)
+    merge(collect_arguments(4, a = 5, c = 6) )
+end
+
+@test merge_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
+```
+"""
 function Base.merge(a::Arguments, b::Arguments)
     Arguments((a.positional..., b.positional...),
               merge(a.keyword, b.keyword))
@@ -29,19 +47,19 @@ export push
 """
     push(arguments::Arguments, positional...; keyword...)
 
-Add positional and keyword arguments to an already existing arguments type.
+Add positional and keyword arguments to an already existing `Arguments` type.
+
 Positional arguments are added at the end, and new keyword arguments are added
 to old keyword arguments, or, if the keys match, overwrite them.
 
 # Examples
 ```julia
-arguments_test = @chain begin
-    collect_arguments(1, a = 3)
-    push(2, b = 4)
+push_test = @chain begin
+    collect_arguments(1, a = 2, b = 3)
+    push(4, a = 5, c = 6)
 end
 
-@test arguments_test ==
-      collect_arguments(1, 2, a = 3, b = 4)
+@test push_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
 ```
 """
 function push(a::Arguments, positional...; keyword...)
@@ -57,11 +75,12 @@ added at the start.
 
 # Examples
 ```julia
-@test (@chain begin
-                  collect_arguments(2, a = 3)
-                  unshift(1)
-              end) ==
-            collect_arguments(1, 2, a = 3)
+unshift_test = @chain begin
+    collect_arguments(2, a = 3)
+    unshift(1)
+end
+
+@test unshift_test == collect_arguments(1, 2, a = 3)
 ```
 """
 function unshift(a::Arguments, positional...)
@@ -75,7 +94,7 @@ export LazyCall
         function_call::T
     end
 
-Will store positional and keyword arguments for later use.
+Will store a function along with its arguments for later use.
 """
 type LazyCall{T <: Function}
     arguments::Arguments
@@ -106,11 +125,9 @@ Easy way to build a `LazyCall` type.
 
 # Examples
 ```julia
-@test (@chain begin
-                  collect_call(vcat, [1, 2], [3, 4])
-                  run(map)
-              end) ==
-      map(vcat, [1, 2], [3, 4])
+l = collect_call(vcat, [1, 2], [3, 4])
+@test l.function_call == vcat
+@test l.arguments == collect_arguments([1, 2], [3, 4])
 ```
 """
 collect_call(f, positional...; keyword...) =
@@ -132,12 +149,14 @@ Call `run` on the arguments in `a`
 
 # Examples
 ```julia
-Test.@test (@chain begin
-                 collect_call(vcat, [1, 2], [3, 4])
-                 collect_arguments(map)
-                 run
-             end) ==
-      map(vcat, [1, 2], [3, 4])
+run_test = @chain begin
+    collect_arguments([1, 2], [3, 4])
+    unshift(vcat)
+    collect_arguments(map)
+    run
+end
+
+@test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
 Base.run(a::Arguments) = run(a, run)
@@ -149,14 +168,14 @@ Call `l.function_call` on the arguments in `l.arguments`
 
 # Examples
 ```julia
-test_function(a, b; c = 4) = a - b + c
+run_test = @chain begin
+    collect_arguments([1, 2], [3, 4])
+    unshift(vcat)
+    LazyCall(map)
+    run
+end
 
-@test (@chain begin
-                  collect_arguments(1, 2, c = 3)
-                  LazyCall(test_function)
-                  run
-              end) ==
-      test_function(1, 2, c = 3)
+@test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
 Base.run(l::LazyCall) = run(l.arguments, l.function_call)
@@ -168,13 +187,13 @@ Call `f` on the arguments in `a`
 
 # Examples
 ```julia
-test_function(a, b; c = 4) = a - b + c
+run_test = @chain begin
+    collect_arguments([1, 2], [3, 4])
+    unshift(vcat)
+    run(map)
+end
 
-@test (@chain begin
-                  collect_arguments(1, 2, c = 3)
-                  run(test_function)
-              end) ==
-      test_function(1, 2, c = 3)
+@test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
 Base.run(a::Arguments, f::Function) = f(a.positional...; collect(a.keyword)...)
@@ -187,12 +206,13 @@ the standard position for functional programming, then call `f` on the result.
 
 # Examples
 ```julia
-@test (@chain begin
-                  collect_arguments([1, 2], [3,4])
-                  LazyCall(vcat)
-                  run(map)
-              end) ==
-      map(vcat, [1, 2], [3, 4])
+run_test = @chain begin
+    collect_arguments([1, 2], [3,4])
+    LazyCall(vcat)
+    run(map)
+end
+
+@test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
 Base.run(l::LazyCall, f::Function) =
@@ -201,13 +221,12 @@ Base.run(l::LazyCall, f::Function) =
 """
     @lazy_call(e)
 
-Mostly cosmetic; will break apart a function call into a `LazyCall` object. Cannot handle keyword
-arguments at the moment.
+Will break apart a function call into a `LazyCall` object. Cannot handle keyword arguments at the
+moment.
 
 # Examples
 ```julia
-@test ( @lazy_call +(1, 2) ) ==
-      collect_call(+, 1, 2)
+@test ( @lazy_call +(1, 2) ) == collect_call(+, 1, 2)
 
 @test ( @lazy_call(1) ) == 1
 ```

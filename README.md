@@ -18,18 +18,15 @@ heavily to one-more-minute/Lazy.jl.
 
 ```julia
 A = [1, 2]
-B = [3, 4]
+B = ( [5, 6], [7, 8] )
 
 fancy = @chain begin
     A
-    map(x -> x + 1, _)
-    begin @unweave vcat(~_, ~B, ~[5, 6] ) end
+    begin @unweave vcat(~_, ~_, ~[3, 4], ~(B...) ) end
     run(map)
 end
 
-boring = map((a, b, c) -> vcat(a, b, c), map(x -> x + 1, A), B, [5, 6])
-
-@test fancy == boring
+boring = map((a, c, b...) -> vcat(a, a, c, b...), A, [3, 4], B...)
 ```
 
 ### Example 2

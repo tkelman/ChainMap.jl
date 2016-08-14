@@ -1,55 +1,61 @@
 using ChainMap
 using Base.Test
 
-arguments_test = @chain begin
-    collect_arguments(1, a = 3)
-    push(2, b = 4)
+merge_test = @chain begin
+    collect_arguments(1, a = 2, b = 3)
+    merge(collect_arguments(4, a = 5, c = 6) )
 end
 
-@test arguments_test ==
-      collect_arguments(1, 2, a = 3, b = 4)
-@test (@chain begin
-                  collect_arguments(2, a = 3)
-                  unshift(1)
-              end) ==
-            collect_arguments(1, 2, a = 3)
+@test merge_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
+push_test = @chain begin
+    collect_arguments(1, a = 2, b = 3)
+    push(4, a = 5, c = 6)
+end
+
+@test push_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
+unshift_test = @chain begin
+    collect_arguments(2, a = 3)
+    unshift(1)
+end
+
+@test unshift_test == collect_arguments(1, 2, a = 3)
 a = collect_arguments(1, 2, a = 3, b = 4)
 @test a.positional == (1, 2)
 @test a.keyword == Dict{Symbol, Any}(:a => 3, :b => 4)
-@test (@chain begin
-                  collect_call(vcat, [1, 2], [3, 4])
-                  run(map)
-              end) ==
-      map(vcat, [1, 2], [3, 4])
-Test.@test (@chain begin
-                 collect_call(vcat, [1, 2], [3, 4])
-                 collect_arguments(map)
-                 run
-             end) ==
-      map(vcat, [1, 2], [3, 4])
-test_function(a, b; c = 4) = a - b + c
+l = collect_call(vcat, [1, 2], [3, 4])
+@test l.function_call == vcat
+@test l.arguments == collect_arguments([1, 2], [3, 4])
+run_test = @chain begin
+    collect_arguments([1, 2], [3, 4])
+    unshift(vcat)
+    collect_arguments(map)
+    run
+end
 
-@test (@chain begin
-                  collect_arguments(1, 2, c = 3)
-                  LazyCall(test_function)
-                  run
-              end) ==
-      test_function(1, 2, c = 3)
-test_function(a, b; c = 4) = a - b + c
+@test run_test == map(vcat, [1, 2], [3, 4])
+run_test = @chain begin
+    collect_arguments([1, 2], [3, 4])
+    unshift(vcat)
+    LazyCall(map)
+    run
+end
 
-@test (@chain begin
-                  collect_arguments(1, 2, c = 3)
-                  run(test_function)
-              end) ==
-      test_function(1, 2, c = 3)
-@test (@chain begin
-                  collect_arguments([1, 2], [3,4])
-                  LazyCall(vcat)
-                  run(map)
-              end) ==
-      map(vcat, [1, 2], [3, 4])
-@test ( @lazy_call +(1, 2) ) ==
-      collect_call(+, 1, 2)
+@test run_test == map(vcat, [1, 2], [3, 4])
+run_test = @chain begin
+    collect_arguments([1, 2], [3, 4])
+    unshift(vcat)
+    run(map)
+end
+
+@test run_test == map(vcat, [1, 2], [3, 4])
+run_test = @chain begin
+    collect_arguments([1, 2], [3,4])
+    LazyCall(vcat)
+    run(map)
+end
+
+@test run_test == map(vcat, [1, 2], [3, 4])
+@test ( @lazy_call +(1, 2) ) == collect_call(+, 1, 2)
 
 @test ( @lazy_call(1) ) == 1
 @test ( @chain 1 vcat(2) ) ==
@@ -63,13 +69,15 @@ test_function(a, b; c = 4) = a - b + c
 
 @test ( @chain 1 begin -(3, 2 + _) end ) == 0
 @test (@chain 1 vcat) == vcat(1)
-@test (@chain begin
-                  1
-                  vcat(2)
-               end) ==
-      @chain 1 vcat(2)
+chain_block = @chain begin
+    1
+    vcat(2)
+end
 
-@test (@chain 1 + 1) == 2
+@test chain_block == @chain 1 vcat(2)
+
+# Cannot chain only one argument
+@test_throws ErrorException ChainMap.chain(:(1 + 1))
 @test ( @chain 1 vcat(2) vcat(3) ) ==
       ( @chain ( @chain 1 vcat(2) ) vcat(3) )
 a = [1, 2]
@@ -84,37 +92,50 @@ end
 boring = map((a, c, b...) -> vcat(a, a, c, b...), a, [3, 4], b...)
 
 @test fancy == boring
+
+# No arguments marked with tildas detected
+@test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
+# Cannot include more than one splatted argument
+@test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
 @test bitnot(1) == ~1
+"Docstring for @binaryfun"
 binaryfun(a, b, c) = :($b($a, $c))
+
 chainback(a, b, c) = :($c($b, $a))
+
 @nonstandard binaryfun chainback
+
 @test (@binaryfun 1 vcat 2) == vcat(1, 2)
 @test (@chainback 2 3 vcat) == vcat(3, 2)
-@test (@chain begin
-           collect_arguments(1)
-           @push_block begin
-               2
-               a = 3 end end) ==
-      push(collect_arguments(1), 2, a = 3)
-@test (@chain begin
-           1
-           @arguments_block begin
-               2
-               a = 3 end end) ==
-      collect_arguments(1, 2, a = 3)
+push_test = @chain begin
+    1
+    collect_arguments
+    @push_block begin
+        2
+        a = 3
+    end
+end
+
+@test push_test == push(collect_arguments(1), 2, a = 3)
+arguments_test = @chain begin
+    1
+    @arguments_block begin
+        2
+        a = 3
+    end
+end
+
+@test arguments_test == collect_arguments(1, 2, a = 3)
 A = [1, 2]
-B = [3, 4]
+B = ( [5, 6], [7, 8] )
 
 fancy = @chain begin
     A
-    map(x -> x + 1, _)
-    begin @unweave vcat(~_, ~B, ~[5, 6] ) end
+    begin @unweave vcat(~_, ~_, ~[3, 4], ~(B...) ) end
     run(map)
 end
 
-boring = map((a, b, c) -> vcat(a, b, c), map(x -> x + 1, A), B, [5, 6])
-
-@test fancy == boring
+boring = map((a, c, b...) -> vcat(a, a, c, b...), A, [3, 4], B...)
 along() = "dummy function; could be a fancy view some day"
 
 Base.run(A::AbstractArray,

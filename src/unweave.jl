@@ -59,17 +59,26 @@ end
 boring = map((a, c, b...) -> vcat(a, a, c, b...), a, [3, 4], b...)
 
 @test fancy == boring
+
+# No arguments marked with tildas detected
+@test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
+# Cannot include more than one splatted argument
+@test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
 ```
 """
 function unweave(e::Expr)
     e_replace, d = replace_record(e)
 
     if length(d) == 0
-        return e
+        error("No arguments marked with tildas detected")
     end
 
     dotted = filter((k, v) -> MacroTools.isexpr(k, :...), d)
     undotted = filter((k, v) -> !(MacroTools.isexpr(k, :...)), d)
+
+    if length(dotted) > 1
+        error("Cannot include more than one splatted argument")
+    end
 
     anonymous_arguments = Expr(:tuple, values(undotted)..., values(dotted)...)
     over_arguments = (keys(undotted)..., keys(dotted)...)

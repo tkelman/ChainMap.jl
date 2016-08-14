@@ -1,10 +1,13 @@
 function nonstandard1(f)
-  macro_f = Expr(:quote, Expr(:macrocall, Symbol("@" * string(f))))
+  symbol_f = Symbol("@" * string(f) )
+  macro_f = Expr(:quote, Expr(:macrocall, symbol_f))
+  string_f = "Nonstandard evaluation version of [`$symbol_f`](@ref)"
   quote
       macro $f(args...)
           esc($f(args...) )
       end
       @doc (@doc $f) $macro_f
+      @doc $string_f $f
   end
 end
 
@@ -20,9 +23,13 @@ copy over the docstrings from the standard version to the nonstandard version.
 
 #Examples
 ```julia
+"Docstring for @binaryfun"
 binaryfun(a, b, c) = :(\$b(\$a, \$c))
+
 chainback(a, b, c) = :(\$c(\$b, \$a))
+
 @nonstandard binaryfun chainback
+
 @test (@binaryfun 1 vcat 2) == vcat(1, 2)
 @test (@chainback 2 3 vcat) == vcat(3, 2)
 ```
@@ -49,12 +56,16 @@ assignments, and feed them to `push`
 
 #Examples
 ```julia
-@test (@chain begin
-           collect_arguments(1)
-           @push_block begin
-               2
-               a = 3 end end) ==
-      push(collect_arguments(1), 2, a = 3)
+push_test = @chain begin
+    1
+    collect_arguments
+    @push_block begin
+        2
+        a = 3
+    end
+end
+
+@test push_test == push(collect_arguments(1), 2, a = 3)
 ```
 """
 push_block(es...) = Expr(:call, :push, break_up_blocks(es...)...)
@@ -67,12 +78,15 @@ assignments, and feed all arguments to `collect_arguments`
 
 #Examples
 ```julia
-@test (@chain begin
-           1
-           @arguments_block begin
-               2
-               a = 3 end end) ==
-      collect_arguments(1, 2, a = 3)
+arguments_test = @chain begin
+    1
+    @arguments_block begin
+        2
+        a = 3
+    end
+end
+
+@test arguments_test == collect_arguments(1, 2, a = 3)
 ```
 """
 arguments_block(es...) =
