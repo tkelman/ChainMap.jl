@@ -86,7 +86,7 @@ boring = mapreducedim(x -> x + 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
 [appveyor_url]: https://ci.appveyor.com/project/bramtayl/chainmap-jl/branch/master
 
 [coveralls_image]: https://coveralls.io/repos/bramtayl/ChainMap.jl/badge.svg?branch=master&service=github
-[coverals_url]: https://coveralls.io/github/bramtayl/ChainMap.jl?branch=master
+[coveralls_url]: https://coveralls.io/github/bramtayl/ChainMap.jl?branch=master
 
 [codecov_image]: https://codecov.io/github/bramtayl/ChainMap.jl/coverage.svg?branch=master
 [codecov_url]: https://codecov.io/github/bramtayl/ChainMap.jl?branch=master
