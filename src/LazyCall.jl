@@ -5,7 +5,10 @@ export Arguments
         keyword::Dict{Symbol, Any}
     end
 
-Will store positional and keyword arguments for later use.
+Will store positional and keyword arguments for later use. Create
+with [`collect_arguments`](@ref). You can also [`merge`](@ref) to
+`Arguments`, [`push`](@ref) or [`unshift`](@ref) in new
+arguments, and run with [`run`](@ref).
 """
 type Arguments
   positional::Tuple
@@ -15,7 +18,8 @@ end
 """
     Arguments(positional::Tuple, keyword::Vector)
 
-Convert `keyword` to a `Dict` before creating Arguments type.
+Convert `keyword` to a `Dict` before creating am [`Arguments`](@ref)
+type.
 """
 Arguments(positional::Tuple, keyword::Vector) =
     Arguments(positional, Dict(keyword))
@@ -23,10 +27,11 @@ Arguments(positional::Tuple, keyword::Vector) =
 """
     merge(a::Arguments, b::Arguments)
 
-Merge two `Arguments` types.
+Merge two [`Arguments`](@ref) types.
 
-Positional arguments are added at the end, and new keyword arguments are added
-to old keyword arguments, or, if the keys match, overwrite them.
+Positional arguments are added at the end, and new keyword arguments
+are added to old keyword arguments, or, if the keys match, overwrite
+them.
 
 # Examples
 ```julia
@@ -47,10 +52,12 @@ export push
 """
     push(arguments::Arguments, positional...; keyword...)
 
-Add positional and keyword arguments to an already existing `Arguments` type.
+Add positional and keyword arguments to an already existing
+[`Arguments`](@ref) type.
 
-Positional arguments are added at the end, and new keyword arguments are added
-to old keyword arguments, or, if the keys match, overwrite them.
+Positional arguments are added at the end, and new keyword arguments
+are added to old keyword arguments, or, if the keys match, overwrite
+them.
 
 # Examples
 ```julia
@@ -70,8 +77,10 @@ export unshift
 """
     unshift(arguments::Arguments, positional...)
 
-Add positional arguments to an already existing arguments type. Arguments are
-added at the start.
+Add positional arguments to an already existing [`Arguments`](@ref)
+type.
+
+New arguments are added at the start.
 
 # Examples
 ```julia
@@ -94,7 +103,8 @@ export LazyCall
         function_call::T
     end
 
-Will store a function along with its arguments for later use.
+Will store a function along with its arguments for later use. Create
+with `collect_call`(@ref) and run with [`run`](@ref)
 """
 type LazyCall{T <: Function}
     arguments::Arguments
@@ -105,7 +115,7 @@ export collect_arguments
 """
     collect_arguments(positional...; keyword...)
 
-Easy way to build an `Arguments` type.
+Easy way to build an [`Arguments`](@ref) type.
 
 # Examples
 ```julia
@@ -121,7 +131,7 @@ export collect_call
 """
     collect_call(f::Function, positional...; keyword...)
 
-Easy way to build a `LazyCall` type.
+Easy way to build a [`LazyCall`](@ref) type.
 
 # Examples
 ```julia
@@ -145,7 +155,7 @@ export run
 """
      run(a::Arguments)
 
-Call `run` on the arguments in `a`
+Call `run` on the [`Arguments`](@ref) in `a`
 
 # Examples
 ```julia
@@ -164,7 +174,7 @@ Base.run(a::Arguments) = run(a, run)
 """
      run(l::LazyCall)
 
-Call `l.function_call` on the arguments in `l.arguments`
+Call `l.function_call` on the [`Arguments`](@ref) in `l.arguments`
 
 # Examples
 ```julia
@@ -183,7 +193,7 @@ Base.run(l::LazyCall) = run(l.arguments, l.function_call)
 """
      run(a::Arguments, f::Function)
 
-Call `f` on the arguments in `a`
+Call `f` on the [`Arguments`](@ref) in `a`
 
 # Examples
 ```julia
@@ -201,8 +211,9 @@ Base.run(a::Arguments, f::Function) = f(a.positional...; collect(a.keyword)...)
 """
      run(l::LazyCall, f::Function)
 
-Insert `l.function` as the first positional arguments in `l.arguments`,
-the standard position for functional programming, then call `f` on the result.
+Insert `l.function` as the first positional argument in
+`l.arguments`, the standard position for functional programming,
+then call `f` on the result.
 
 # Examples
 ```julia
@@ -221,8 +232,8 @@ Base.run(l::LazyCall, f::Function) =
 """
     @lazy_call(e)
 
-Will break apart a function call into a `LazyCall` object. Cannot handle keyword arguments at the
-moment.
+Will break apart a function call into a [`LazyCall`](@ref) object.
+Cannot handle keyword arguments at the moment.
 
 # Examples
 ```julia

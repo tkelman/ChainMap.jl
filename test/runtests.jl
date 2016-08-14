@@ -98,15 +98,16 @@ boring = map((a, c, b...) -> vcat(a, a, c, b...), a, [3, 4], b...)
 # Cannot include more than one splatted argument
 @test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
 @test bitnot(1) == ~1
-"Docstring for @binaryfun"
 binaryfun(a, b, c) = :($b($a, $c))
-
 chainback(a, b, c) = :($c($b, $a))
 
 @nonstandard binaryfun chainback
 
 @test (@binaryfun 1 vcat 2) == vcat(1, 2)
 @test (@chainback 2 3 vcat) == vcat(3, 2)
+
+@test (@chain (@doc @binaryfun) string chomp) ==
+      "See documentation of [`binaryfun`](@ref)"
 push_test = @chain begin
     1
     collect_arguments

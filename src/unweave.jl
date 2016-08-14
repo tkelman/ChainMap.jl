@@ -39,10 +39,10 @@ end
 Interprets `e` as a function with its positional arguments wrapped in tildas and
 interwoven into it.
 
-Will return a `LazyCall` object containing both an anonymous function and its
-arguments. You can also weave in *only one* splatted argument. Make
+Will return a [`LazyCall`](@ref) object containing both an anonymous function
+and its arguments. You can also weave in *only one* splatted argument. Make
 multi-line functions by wrapping in a begin block. To use `~` as a
-function, use the alias `bitnot`.
+function, use the alias [`bitnot`](@ref).
 
 # Examples
 
@@ -93,7 +93,7 @@ export bitnot
 """
     bitnot
 
-Alias for `~` for use within `@unweave`
+Alias for `~` for use within [`@unweave`](@ref)
 
 # Examples
 ```julia

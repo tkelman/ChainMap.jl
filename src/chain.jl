@@ -59,8 +59,9 @@ chain(head, tail) = :($tail($head))
 """
     @chain e::Expr
 
-Separate single begin blocks out into lines and recur. Throws an error if `e` is not
-a begin block.
+Separate single begin blocks out into lines and recur.
+
+Throws an error if `e` is not a begin block.
 
 # Examples
 ```julia

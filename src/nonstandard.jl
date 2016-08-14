@@ -23,15 +23,16 @@ the standard version.
 
 # Examples
 ```julia
-"Docstring for @binaryfun"
 binaryfun(a, b, c) = :(\$b(\$a, \$c))
-
 chainback(a, b, c) = :(\$c(\$b, \$a))
 
 @nonstandard binaryfun chainback
 
 @test (@binaryfun 1 vcat 2) == vcat(1, 2)
 @test (@chainback 2 3 vcat) == vcat(3, 2)
+
+@test (@chain (@doc @binaryfun) string chomp) ==
+      "See documentation of [`binaryfun`](@ref)"
 ```
 """
 nonstandard(fs...) = Expr(:block, map(nonstandard1, fs)...)
@@ -52,7 +53,7 @@ break_up_blocks(es...) = vcat(map(break_up_block, es)...)
    @push_block(es...)
 
 Will break up any begin blocks in `es`, create keyword arguments from
-assignments, and feed them to `push`
+assignments, and feed them to [`push`](@ref)
 
 # Examples
 ```julia
@@ -74,7 +75,7 @@ push_block(es...) = Expr(:call, :push, break_up_blocks(es...)...)
     @arguments_block(es...)
 
 Will break up any begin blocks in `es` into lines, create keyword arguments from
-assignments, and feed all arguments to `collect_arguments`
+assignments, and feed all arguments to [`collect_arguments`](@ref)
 
 # Examples
 ```julia
