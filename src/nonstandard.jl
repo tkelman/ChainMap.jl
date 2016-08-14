@@ -32,8 +32,8 @@ chainback(a, b, c) = :(\$c(\$b, \$a))
 @test (@binaryfun 1 vcat 2) == vcat(1, 2)
 @test (@chainback 2 3 vcat) == vcat(3, 2)
 
-@test (@chain (@doc @binaryfun) string chomp) ==
-      "See documentation of [`binaryfun`](@ref)"
+(@chain (@doc @binaryfun) string chomp) ==
+    "See documentation of [`binaryfun`](@ref)"
 ```
 """
 nonstandard(fs...) = Expr(:block, map(nonstandard1, fs)...)
