@@ -3,9 +3,23 @@
 This package attempts to integrate mapping and chaining. The chaining code owes
 heavily to one-more-minute/Lazy.jl.
 
-| **Documentation**                                                               | **PackageEvaluator**                                            | **Build Status**                                                                                |
-|:-------------------------------------------------------------------------------:|:---------------------------------------------------------------:|:-----------------------------------------------------------------------------------------------:|
-| [![][docs-stable_image]][docs-stable_url] [![][docs-latest_image]][docs-latest_url] | [![][pkg-0.4_image]][pkg-0.4_url] [![][pkg-0.5_image]][pkg-0.5_url] | [![][travis_image]][travis_url] [![][appveyor_image]][appveyor_url] [![][codecov_image]][codecov_url] |
+## Badges
+
+### Documentation
+
+[![][docs-stable_image]][docs-stable_url] [![][docs-latest_image]][docs-latest_url]
+
+### Build Status
+
+[![][travis_image]][travis_url] [![][appveyor_image]][appveyor_url]
+
+### Package Evaluator
+
+[![][pkg-0.4_image]][pkg-0.4_url] [![][pkg-0.5_image]][pkg-0.5_url]
+
+### Coverage
+
+[![][coveralls_image]][coveralls_url] [![][codecov_image]][codecov_url]
 
 ## Documentation
 
@@ -71,8 +85,11 @@ boring = mapreducedim(x -> x + 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
 [appveyor_image]: https://ci.appveyor.com/api/projects/status/github/bramtayl/ChainMap.jl?svg=true&branch=master
 [appveyor_url]: https://ci.appveyor.com/project/bramtayl/chainmap-jl/branch/master
 
-[codecov_image]: https://coveralls.io/repos/bramtayl/ChainMap.jl/badge.svg?branch=master&service=github
-[codecov_url]: https://coveralls.io/github/bramtayl/ChainMap.jl?branch=master
+[coveralls_image]: https://coveralls.io/repos/bramtayl/ChainMap.jl/badge.svg?branch=master&service=github
+[coverals_url]: https://coveralls.io/github/bramtayl/ChainMap.jl?branch=master
+
+[codecov_image]: https://codecov.io/github/bramtayl/ChainMap.jl/coverage.svg?branch=master
+[codecov_url]: https://codecov.io/github/bramtayl/ChainMap.jl?branch=master
 
 [issues_url]: https://github.com/bramtayl/ChainMap.jl/issues
 
