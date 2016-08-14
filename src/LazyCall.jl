@@ -22,7 +22,7 @@ Convert `keyword` to a `Dict` before creating an [`Arguments`](@ref)
 type.
 """
 Arguments(positional::Tuple, keyword::Vector) =
-    Arguments(positional, Dict(keyword))
+    @chain keyword Dict Arguments(positional, _)
 
 """
     merge(a::Arguments, b::Arguments)
@@ -44,8 +44,8 @@ end
 ```
 """
 function Base.merge(a::Arguments, b::Arguments)
-    Arguments((a.positional..., b.positional...),
-              merge(a.keyword, b.keyword))
+    positional = (a.positional..., b.positional...)
+    @chain a.keyword merge(b.keyword) Arguments(positional, _)
 end
 
 export push
@@ -69,9 +69,8 @@ end
 @test push_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
 ```
 """
-function push(a::Arguments, positional...; keyword...)
-  merge(a, Arguments(positional, keyword))
-end
+push(a::Arguments, positional...; keyword...) =
+  @chain positional Arguments(keyword) merge(a, _)
 
 export unshift
 """
@@ -92,9 +91,8 @@ end
 @test unshift_test == collect_arguments(1, 2, a = 3)
 ```
 """
-function unshift(a::Arguments, positional...)
-  merge(Arguments(positional, []), a)
-end
+unshift(a::Arguments, positional...) =
+    @chain positional Arguments([]) merge(a)
 
 export LazyCall
 """
@@ -125,7 +123,7 @@ a = collect_arguments(1, 2, a = 3, b = 4)
 ```
 """
 collect_arguments(positional...; keyword...) =
-    Arguments(positional, keyword)
+    @chain positional Arguments(keyword)
 
 export collect_call
 """
@@ -141,7 +139,7 @@ l = collect_call(vcat, [1, 2], [3, 4])
 ```
 """
 collect_call(f, positional...; keyword...) =
-    LazyCall(Arguments(positional, keyword), f)
+    @chain positional Arguments(keyword) LazyCall(f)
 
 import Base.==
 
@@ -169,7 +167,7 @@ end
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(a::Arguments) = run(a, run)
+Base.run(a::Arguments) = @chain a run(run)
 
 """
      run(l::LazyCall)
@@ -188,7 +186,7 @@ end
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(l::LazyCall) = run(l.arguments, l.function_call)
+Base.run(l::LazyCall) = @chain l.arguments run(l.function_call)
 
 """
      run(a::Arguments, f::Function)
@@ -206,7 +204,8 @@ end
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(a::Arguments, f::Function) = f(a.positional...; collect(a.keyword)...)
+Base.run(a::Arguments, f::Function) =
+    @chain a.keyword collect f(a.positional...; _...)
 
 """
      run(l::LazyCall, f::Function)
@@ -227,7 +226,7 @@ end
 ```
 """
 Base.run(l::LazyCall, f::Function) =
-    run(unshift(l.arguments, l.function_call), f)
+    @chain l.arguments unshift(l.function_call) run(f)
 
 export lazy_call
 """
@@ -248,3 +247,70 @@ lazy_call(e) =
         a_(b__) => :(collect_call($a, $(b...)))
         a_ => a
     end
+
+@nonstandard lazy_call
+export @lazy_call
+
+function break_up_block(e)
+     if @chain e MacroTools.isexpr(:block)
+         @chain e MacroTools.rmlines() _.args break_up_blocks(_...)
+     elseif @chain e MacroTools.isexpr(:(=))
+         @chain :kw Expr(e.args...)
+     else
+         e
+     end
+ end
+
+break_up_blocks(es...) = @chain es map(break_up_block, _) vcat(_...)
+
+export push_block
+"""
+   @push_block(es...)
+
+Will break up any begin blocks in `es`, create keyword arguments from
+assignments, and feed them to [`push`](@ref)
+
+# Examples
+```julia
+push_test = @chain begin
+    1
+    collect_arguments
+    @push_block begin
+        2
+        a = 3
+    end
+end
+
+@test push_test == @chain 1 collect_arguments push(2, a = 3)
+```
+"""
+push_block(es...) = @chain es break_up_blocks(_...) Expr(:call, :push, _...)
+
+@nonstandard push_block
+export @push_block
+
+export arguments_block
+"""
+    @arguments_block(es...)
+
+Will break up any begin blocks in `es` into lines, create keyword arguments from
+assignments, and feed all arguments to [`collect_arguments`](@ref)
+
+# Examples
+```julia
+arguments_test = @chain begin
+    1
+    @arguments_block begin
+        2
+        a = 3
+    end
+end
+
+@test arguments_test == collect_arguments(1, 2, a = 3)
+```
+"""
+arguments_block(es...) =
+     @chain es break_up_blocks(_...) Expr(:call, :collect_arguments, _...)
+
+@nonstandard arguments_block
+export @arguments_block

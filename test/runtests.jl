@@ -58,6 +58,25 @@ end
 @test ( @lazy_call +(1, 2) ) == collect_call(+, 1, 2)
 
 @test ( @lazy_call(1) ) == 1
+push_test = @chain begin
+    1
+    collect_arguments
+    @push_block begin
+        2
+        a = 3
+    end
+end
+
+@test push_test == @chain 1 collect_arguments push(2, a = 3)
+arguments_test = @chain begin
+    1
+    @arguments_block begin
+        2
+        a = 3
+    end
+end
+
+@test arguments_test == collect_arguments(1, 2, a = 3)
 @test ( @chain 1 vcat(2) ) ==
       vcat(1, 2)
 
@@ -80,23 +99,35 @@ end
 @test_throws ErrorException ChainMap.chain(:(1 + 1))
 @test ( @chain 1 vcat(2) vcat(3) ) ==
       ( @chain ( @chain 1 vcat(2) ) vcat(3) )
-a = [1, 2]
-b = ( [5, 6], [7, 8] )
+A = [1, 2]
+B = ( [5, 6], [7, 8] )
 
-fancy = @chain begin
-    a
-    begin @unweave vcat(~_, ~_, ~[3, 4], ~(b...) ) end
+unweave_test = @chain begin
+    @unweave vcat(~A, ~[3, 4], ~(B...) )
     run(map)
 end
 
-boring = map((a, c, b...) -> vcat(a, a, c, b...), a, [3, 4], b...)
-
-@test fancy == boring
+@test unweave_test ==
+      map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
 
 # No arguments marked with tildas detected
 @test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
 # Cannot include more than one splatted argument
 @test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
+
+e = Expr(:parameters, Expr(:..., :a))
+e = Expr(:..., :a)
+A = [1, 2]
+B = ( [5, 6], [7, 8] )
+
+unweave_test = @chain begin
+    A
+    @unweave vcat(~[3, 4], ~(B...) )
+    run(map)
+end
+
+@test unweave_test ==
+      map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
 @test bitnot(1) == ~1
 binaryfun(a, b, c) = :($b($a, $c))
 chainback(a, b, c) = :($c($b, $a))
@@ -108,25 +139,6 @@ chainback(a, b, c) = :($c($b, $a))
 
 (@chain (@doc @binaryfun) string chomp) ==
     "See documentation of [`binaryfun`](@ref)"
-push_test = @chain begin
-    1
-    collect_arguments
-    @push_block begin
-        2
-        a = 3
-    end
-end
-
-@test push_test == push(collect_arguments(1), 2, a = 3)
-arguments_test = @chain begin
-    1
-    @arguments_block begin
-        2
-        a = 3
-    end
-end
-
-@test arguments_test == collect_arguments(1, 2, a = 3)
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 

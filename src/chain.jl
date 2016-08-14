@@ -1,6 +1,7 @@
 function insert_(e)
     # first part needed because of MacroTools unblocking
-    if e.head == :block || :_ in e.args || Expr(:..., :_) in e.args
+    if e.head == :block || :_ in e.args || Expr(:..., :_) in e.args ||
+       Expr(:parameters, Expr(:..., :_)) in e.args
         return e
     end
 
@@ -22,7 +23,7 @@ export chain
 If
 
 - `into_that` can be recognized as a function call or a macro call, and
-- neither bare `\_` nor `\_...` is a positional argument to `into_that`
+- neither bare `_` nor `_...` nor `;_...` is a positional argument to `into_that`
 
 `_` will be inserted as the first argument to `into_that`.
 
@@ -96,3 +97,6 @@ Reduce `@chain` over `es`
 ```
 """
 chain(es...) = reduce(chain, es)
+
+@nonstandard chain
+export @chain
