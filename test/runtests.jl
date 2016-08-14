@@ -19,16 +19,14 @@ a = collect_arguments(1, 2, a = 3, b = 4)
 @test (@chain begin
                   collect_call(vcat, [1, 2], [3, 4])
                   run(map)
-                  vcat(_...)
               end) ==
-      [ 1, 3, 2, 4 ]
+      map(vcat, [1, 2], [3, 4])
 Test.@test (@chain begin
                  collect_call(vcat, [1, 2], [3, 4])
                  collect_arguments(map)
                  run
-                 vcat(_...)
              end) ==
-      [ 1, 3, 2, 4 ]
+      map(vcat, [1, 2], [3, 4])
 test_function(a, b; c = 4) = a - b + c
 
 @test (@chain begin
@@ -48,9 +46,8 @@ test_function(a, b; c = 4) = a - b + c
                   collect_arguments([1, 2], [3,4])
                   LazyCall(vcat)
                   run(map)
-                  vcat(_...)
               end) ==
-      [ 1, 3, 2, 4 ]
+      map(vcat, [1, 2], [3, 4])
 @test ( @lazy_call +(1, 2) ) ==
       collect_call(+, 1, 2)
 
@@ -78,12 +75,15 @@ test_function(a, b; c = 4) = a - b + c
 a = [1, 2]
 b = ( [5, 6], [7, 8] )
 
-@test (@chain begin
-                  @unweave vcat(~a, ~a, ~[3, 4], ~(b...) )
-                  run(map)
-                  vcat(_...)
-              end) ==
-      [1, 1, 3, 5, 7, 2, 2, 4, 6, 8]
+fancy = @chain begin
+    a
+    begin @unweave vcat(~_, ~_, ~[3, 4], ~(b...) ) end
+    run(map)
+end
+
+boring = map((a, c, b...) -> vcat(a, a, c, b...), a, [3, 4], b...)
+
+@test fancy == boring
 @test bitnot(1) == ~1
 binaryfun(a, b, c) = :($b($a, $c))
 chainback(a, b, c) = :($c($b, $a))
