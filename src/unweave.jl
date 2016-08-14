@@ -33,6 +33,7 @@ function replace_record(e::Expr)
     (e_replace, d)
 end
 
+export unweave
 """
     @unweave e
 

@@ -10,6 +10,7 @@ function nonstandard1(f)
   end
 end
 
+export nonstandard
 """
     @nonstandard(fs...)
 
@@ -49,6 +50,7 @@ function break_up_block(e)
 
 break_up_blocks(es...) = vcat(map(break_up_block, es)...)
 
+export push_block
 """
    @push_block(es...)
 
@@ -71,6 +73,7 @@ end
 """
 push_block(es...) = Expr(:call, :push, break_up_blocks(es...)...)
 
+export arguments_block
 """
     @arguments_block(es...)
 

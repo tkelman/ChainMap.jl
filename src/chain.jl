@@ -13,6 +13,7 @@ end
 
 expose(tail, head) = :(let _ = $head; $tail; end)
 
+export chain
 """
     @chain head tail::Expr
 

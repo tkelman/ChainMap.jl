@@ -229,6 +229,7 @@ end
 Base.run(l::LazyCall, f::Function) =
     run(unshift(l.arguments, l.function_call), f)
 
+export lazy_call
 """
     @lazy_call(e)
 
