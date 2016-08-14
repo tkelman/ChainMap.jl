@@ -11,23 +11,23 @@ function insert_(e)
     end
 end
 
-expose(tail, head) = :(let _ = $head; $tail; end)
+expose(into_that, insert_this) = :(let _ = $insert_this; $into_that; end)
 
 export chain
 """
-    @chain head tail::Expr
+    @chain insert_this into_that::Expr
 
-`@chain` always reinterprets `\_` in `tail` as `head`.
+`@chain` always reinterprets `\_` in `into_that` as `insert_this`.
 
 If
 
-- tail can be recognized as a function call or a macro call, and
-- neither bare `\_` nor `\_...` is a positional argument to `tail`
+- `into_that` can be recognized as a function call or a macro call, and
+- neither bare `\_` nor `\_...` is a positional argument to `into_that`
 
-`_` will be inserted as the first argument to `tail`.
+`_` will be inserted as the first argument to `into_that`.
 
 To prevent insertion into the first argument, but still reinterpret `_`,
-wrap `tail` in a `begin` block.
+wrap `into_that` in a `begin` block.
 
 # Examples
 ```julia
@@ -43,19 +43,19 @@ wrap `tail` in a `begin` block.
 @test ( @chain 1 begin -(3, 2 + _) end ) == 0
 ```
 """
-chain(head, tail::Expr) = expose(insert_(tail), head)
+chain(insert_this, into_that::Expr) = expose(insert_(into_that), insert_this)
 
 """
-    @chain head tail
+    @chain on_that call_this
 
-Call `tail` on `head`
+Call `call_this` on `on_that`
 
 # Examples
 ```julia
 @test (@chain 1 vcat) == vcat(1)
 ```
 """
-chain(head, tail) = :($tail($head))
+chain(on_that, call_this) = :($call_this($on_that))
 
 """
     @chain e::Expr

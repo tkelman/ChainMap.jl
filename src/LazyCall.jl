@@ -6,7 +6,7 @@ export Arguments
     end
 
 Will store positional and keyword arguments for later use. Create
-with [`collect_arguments`](@ref). You can also [`merge`](@ref) to
+with [`collect_arguments`](@ref). You can also [`merge`](@ref) two
 `Arguments`, [`push`](@ref) or [`unshift`](@ref) in new
 arguments, and run with [`run`](@ref).
 """
@@ -18,7 +18,7 @@ end
 """
     Arguments(positional::Tuple, keyword::Vector)
 
-Convert `keyword` to a `Dict` before creating am [`Arguments`](@ref)
+Convert `keyword` to a `Dict` before creating an [`Arguments`](@ref)
 type.
 """
 Arguments(positional::Tuple, keyword::Vector) =
@@ -104,7 +104,7 @@ export LazyCall
     end
 
 Will store a function along with its arguments for later use. Create
-with `collect_call`(@ref) and run with [`run`](@ref)
+with [`collect_call`](@ref) and run with [`run`](@ref)
 """
 type LazyCall{T <: Function}
     arguments::Arguments
