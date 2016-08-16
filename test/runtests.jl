@@ -1,6 +1,7 @@
 using ChainMap
 using Base.Test
 
+@testset "ChainMap" begin
 merge_test = @chain begin
     collect_arguments(1, a = 2, b = 3)
     merge(collect_arguments(4, a = 5, c = 6) )
@@ -87,6 +88,14 @@ end
       vcat(3, 2, 1)
 
 @test ( @chain 1 begin -(3, 2 + _) end ) == 0
+
+keyword_test(; keyword_arguments...) = keyword_arguments
+
+@test (@chain 1 keyword_test(a = _)) ==
+      keyword_test(a = 1)
+
+@test (@chain keyword_test(a = 1) keyword_test(b = 2; _...) ) ==
+      keyword_test(b = 2, a = 1)
 @test (@chain 1 vcat) == vcat(1)
 chain_block = @chain begin
     1
@@ -110,13 +119,21 @@ end
 @test unweave_test ==
       map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
 
+keyword_test(; keyword_arguments...) = keyword_arguments
+
+a = keyword_test(a = 1, b = 3)
+
+unweave_keyword_test = @chain
+    @unweave keyword_test(~(b = 2); ~(;a...))
+    run
+end
+
+@test unweave_keyword_test == keyword_test(b = 2; a... )
+
 # No arguments marked with tildas detected
 @test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
 # Cannot include more than one splatted argument
 @test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
-
-e = Expr(:parameters, Expr(:..., :a))
-e = Expr(:..., :a)
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
@@ -176,3 +193,4 @@ end
 boring = mapreducedim(x -> x + 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
 
 @test fancy == boring
+end

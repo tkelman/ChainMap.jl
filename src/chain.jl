@@ -1,13 +1,21 @@
+is_(e) =
+    if MacroTools.isexpr(e, :parameters, :..., :kw)
+        contains_(e)
+    else
+        e == :_
+    end
+
+contains_(e) = any(map(is_, e.args) )
+
 function insert_(e)
     # first part needed because of MacroTools unblocking
-    if e.head == :block || :_ in e.args || Expr(:..., :_) in e.args ||
-       Expr(:parameters, Expr(:..., :_)) in e.args
+    if e.head == :block || contains_(e)
         return e
     end
 
     MacroTools.@match e begin
       @a_(b__) => Expr(:macrocall, a, :_, b...)
-      a_(b__) => :( $a( _, $( b... ) ) )
+      a_(b__) => Expr(:call, a, :_, b...)
       a_ => a
     end
 end
@@ -23,7 +31,8 @@ export chain
 If
 
 - `into_that` can be recognized as a function call or a macro call, and
-- neither bare `_` nor `_...` nor `;_...` is a positional argument to `into_that`
+- bare `_` is not a positional argument, assigned to a keyword, or splatted
+    before or after `;`
 
 `_` will be inserted as the first argument to `into_that`.
 
@@ -42,6 +51,14 @@ wrap `into_that` in a `begin` block.
       vcat(3, 2, 1)
 
 @test ( @chain 1 begin -(3, 2 + _) end ) == 0
+
+keyword_test(; keyword_arguments...) = keyword_arguments
+
+@test (@chain 1 keyword_test(a = _)) ==
+      keyword_test(a = 1)
+
+@test (@chain keyword_test(a = 1) keyword_test(b = 2; _...) ) ==
+      keyword_test(b = 2, a = 1)
 ```
 """
 chain(insert_this, into_that::Expr) = expose(insert_(into_that), insert_this)

@@ -1,11 +1,19 @@
-bitnot = ~
+double_match(e, head1, head2) =
+    MacroTools.isexpr(e, head1) &&
+    length(e.args) > 0 &&
+    @chain e.args[1] MacroTools.isexpr(head2)
 
-replace_key(e) =
-    if @chain e MacroTools.isexpr(:...)
-        @chain gensym() Expr(:..., _)
+
+function replace_key(e)
+    replace_symbol = gensym()
+    if @chain e double_match(:parameters, :...)
+        @chain replace_symbol Expr(:..., _)
+    elseif @chain e MacroTools.isexpr(:...)
+        @chain replace_symbol Expr(:..., _)
     else
-        gensym()
+        replace_symbol
     end
+end
 
 function add_key!(d, key)
     if @chain d haskey(key) !
@@ -30,6 +38,27 @@ function replace_record(e::Expr)
     (e_replace, d)
 end
 
+function move_to_last(o::DataStructures.OrderedDict, f::Function)
+    to_last = @chain f filter(o)
+    if length(to_last) > 1
+        error("A maximum of one splatted positional and one splatted keyword argument allowed")
+    end
+    @chain (k, v) -> !f(k, v) filter(o) merge(to_last)
+end
+
+move_to_last(d::Dict, f::Function) =
+    @chain d DataStructures.OrderedDict() move_to_last(f)
+
+reorder_arguments(d) = @chain begin
+    d
+    move_to_last( (k, v) -> @chain k MacroTools.isexpr(:...) )
+    move_to_last( (k, v) -> @chain k double_match(:parameters, :...) )
+end
+
+lazy_anonymous(arguments, f) = :($arguments -> $f)
+lazy_LazyCall(arguments, f) = :(LazyCall($arguments, $f))
+lazy_collect_arguments(es) = :(collect_arguments($(es...)))
+
 export unweave
 """
     @unweave e
@@ -38,9 +67,11 @@ Interprets `e` as a function with its positional arguments wrapped in tildas and
 interwoven into it.
 
 Will return a [`LazyCall`](@ref) object containing both an anonymous function
-and its arguments. You can also weave in *only one* splatted argument. Make
-multi-line functions by wrapping in a begin block. To use `~` as a
-function, use the alias [`bitnot`](@ref).
+and its arguments. Keyword arguments can be woven in. No more than one splatted
+positional argument can be woven in. No more than one splatted keyword can be
+woven in provided there is a `;` visible both inside and outside the tilda. Make
+multi-line functions by wrapping in a begin block. To use `~` as a function, use
+the alias [`bitnot`](@ref).
 
 # Examples
 
@@ -56,36 +87,41 @@ end
 @test unweave_test ==
       map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
 
+keyword_test(; keyword_arguments...) = keyword_arguments
+
+a = keyword_test(a = 1, b = 3)
+e = :(keyword_test(~(b = 2); ~(;a...)))
+unweave_keyword_test = @chain
+    @unweave keyword_test(~(b = 2); ~(;a...))
+    run
+end
+
+@test unweave_keyword_test == keyword_test(b = 2; a... )
+
 # No arguments marked with tildas detected
 @test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
 # Cannot include more than one splatted argument
 @test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
-
-e = Expr(:parameters, Expr(:..., :a))
-e = Expr(:..., :a)
 ```
 """
 function unweave(e::Expr)
-    e_replace, d = replace_record(e)
+    e_replace, d = @chain e replace_record
 
     if length(d) == 0
         error("No arguments marked with tildas detected")
     end
 
-    dotted = filter((k, v) -> MacroTools.isexpr(k, :...), d)
-    undotted = filter((k, v) -> !(MacroTools.isexpr(k, :...)), d)
+    d_reorder = @chain d reorder_arguments
 
-    if length(dotted) > 1
-        error("Cannot include more than one splatted argument")
+    anonymous_function =
+      @chain d_reorder values Expr(:tuple, _...) lazy_anonymous(e_replace)
+
+    @chain begin
+        d_reorder
+        keys
+        lazy_collect_arguments
+        lazy_LazyCall(anonymous_function)
     end
-
-    anonymous_arguments = Expr(:tuple, values(undotted)..., values(dotted)...)
-    over_arguments = (keys(undotted)..., keys(dotted)...)
-
-    anonymous_function = :($anonymous_arguments -> $e_replace)
-    collected_arguments = :(ChainMap.collect_arguments($(over_arguments...)))
-
-    :(ChainMap.LazyCall($collected_arguments, $anonymous_function))
 end
 
 tilda(e) = :(~($e))
