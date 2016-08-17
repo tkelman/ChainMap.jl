@@ -215,7 +215,7 @@ Base.run(a::Arguments, f::Function) = f(a.positional...; a.keyword...)
 """
      run(l::LazyCall, f::Function)
 
-Insert `l.function` as the first positional argument in
+Insert `l.function_call` as the first positional argument in
 `l.arguments`, the standard position for functional programming,
 then call `f` on the result.
 

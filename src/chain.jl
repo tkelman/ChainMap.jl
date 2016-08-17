@@ -41,24 +41,21 @@ wrap `into_that` in a `begin` block.
 
 # Examples
 ```julia
-@test ( @chain 1 vcat(2) ) ==
-      vcat(1, 2)
+@test vcat(1, 2) == @chain 1 vcat(2)
 
-@test ( @chain 1 vcat(2, _) ) ==
-      vcat(2, 1)
+@test vcat(2, 1) == @chain 1 vcat(2, _)
 
-@test ( @chain (2, 1) vcat(3, _...) ) ==
-      vcat(3, 2, 1)
+@test vcat(3, 2, 1) == @chain (2, 1) vcat(3, _...)
 
-@test ( @chain 1 begin -(3, 2 + _) end ) == 0
+@test 0 == @chain 1 begin -(3, 2 + _) end
 
 keyword_test(; keyword_arguments...) = keyword_arguments
 
-@test (@chain 1 keyword_test(a = _)) ==
-      keyword_test(a = 1)
+@test keyword_test(a = 1) == @chain 1 keyword_test(a = _)
 
-@test (@chain keyword_test(a = 1) keyword_test(b = 2; _...) ) ==
-      keyword_test(b = 2, a = 1)
+@test keyword_test(b = 2, a = 1) ==
+    @chain keyword_test(a = 1) keyword_test(b = 2; _...)
+
 ```
 """
 chain(insert_this, into_that::Expr) = expose(insert_(into_that), insert_this)
@@ -70,7 +67,7 @@ Call `call_this` on `on_that`
 
 # Examples
 ```julia
-@test (@chain 1 vcat) == vcat(1)
+@test vcat(1) == @chain 1 vcat
 ```
 """
 chain(on_that, call_this) = :($call_this($on_that))
@@ -107,7 +104,7 @@ Reduce `@chain` over `es`
 # Examples
 ```julia
 @test ( @chain 1 vcat(2) vcat(3) ) ==
-      ( @chain ( @chain 1 vcat(2) ) vcat(3) )
+    @chain ( @chain 1 vcat(2) ) vcat(3)
 ```
 """
 chain(es...) = reduce(chain, es)
