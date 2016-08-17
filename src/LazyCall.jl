@@ -278,7 +278,7 @@ end
 
 export push_block
 """
-   @push_block(es...)
+    @push_block(es...)
 
 Will break up any begin blocks in `es`, create keyword arguments from
 assignments, and feed them to [`push`](@ref)

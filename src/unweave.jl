@@ -108,18 +108,14 @@ end
 
 @test unweave_keyword_test == keyword_test(c = 3; a... )
 
-# No arguments marked with tildas detected
-@test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
-# Cannot include more than one splatted argument
+# Can splat no more than one positional argument
 @test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
+# Can splat no more than one keyword argument
+@test_throws ErrorException ChainMap.unweave(:( ~(;a...) + ~(;b...) ))
 ```
 """
 function unweave(e::Expr)
     e_replace, d = @chain e replace_record
-
-    if length(d) == 0
-        error("No arguments marked with tildas detected")
-    end
 
     d_reorder = o = @chain begin
         d
