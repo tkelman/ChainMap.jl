@@ -7,7 +7,7 @@ is_(e) =
 
 contains_(e) = any(map(is_, e.args) )
 
-function insert_(e)
+function insert_(e::Expr)
     # first part needed because of MacroTools unblocking
     if e.head == :block || contains_(e)
         return e
@@ -78,28 +78,25 @@ chain(on_that, call_this) = :($call_this($on_that))
 """
     @chain e::Expr
 
-Separate single begin blocks out into lines and recur.
-
-Throws an error if `e` is not a begin block.
+Separate single begin blocks out into lines and recur. Return single non-blocks.
 
 # Examples
 ```julia
+@test 1 == @chain 1
+
 chain_block = @chain begin
     1
     vcat(2)
 end
 
 @test chain_block == @chain 1 vcat(2)
-
-# Cannot chain only one argument
-@test_throws ErrorException ChainMap.chain(:(1 + 1))
 ```
 """
-chain(e::Expr) =
-    if e.head == :block
+chain(e) =
+    if MacroTools.isexpr(e, :block)
         chain(MacroTools.rmlines(e).args...)
     else
-        error("Cannot chain only one argument")
+        e
     end
 
 """
@@ -117,3 +114,24 @@ chain(es...) = reduce(chain, es)
 
 @nonstandard chain
 export @chain
+
+export lambda
+"""
+    @lambda(es...)
+
+`chain` together `(_, es...)`, then convert to an anonymous function with _ as
+the input variable.
+
+# Examples
+```julia
+lambda_function = @lambda vcat(2) vcat(3)
+@test lambda_function(1) == vcat(1, 2, 3)
+
+lambda_function_2 = @lambda -(_, 1)
+@test lambda_function_2(2) == 1
+```
+"""
+lambda(es...) = Expr(:->, :_, chain(:_, es...))
+
+@nonstandard lambda
+export @lambda

@@ -34,15 +34,14 @@ heavily to one-more-minute/Lazy.jl.
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
-fancy = @chain begin
+unweave_test = @chain begin
     A
-    begin @unweave vcat(~_, ~_, ~[3, 4], ~(B...) ) end
+    @unweave vcat(~[3, 4], ~(B...) )
     run(map)
 end
 
-boring = map((a, c, b...) -> vcat(a, a, c, b...), A, [3, 4], B...)
-
-@test fancy == boring
+@test unweave_test ==
+      map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
 ```
 
 ### Example 2
@@ -62,7 +61,7 @@ fancy = @chain begin
     reshape(2, 2)
     @arguments_block begin
         map
-        x -> x + 1
+        @lambda *(2) -(1)
         @lazy_call along(1)
         reduce
         +
@@ -70,7 +69,7 @@ fancy = @chain begin
     run
 end
 
-boring = mapreducedim(x -> x + 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
+boring = mapreducedim(x -> 2*x - 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
 
 @test fancy == boring
 ```

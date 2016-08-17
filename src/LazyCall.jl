@@ -2,7 +2,7 @@ export Arguments
 """
     type Arguments
         positional::Tuple
-        keyword::Dict{Symbol, Any}
+        keyword::DataStrucutes.OrderedDict{Symbol, Any}
     end
 
 Will store positional and keyword arguments for later use. Create
@@ -12,17 +12,8 @@ arguments, and run with [`run`](@ref).
 """
 type Arguments
   positional::Tuple
-  keyword::Dict{Symbol, Any}
+  keyword::DataStructures.OrderedDict{Symbol, Any}
 end
-
-"""
-    Arguments(positional::Tuple, keyword::Vector)
-
-Convert `keyword` to a `Dict` before creating an [`Arguments`](@ref)
-type.
-"""
-Arguments(positional::Tuple, keyword::Vector) =
-    @chain keyword Dict Arguments(positional, _)
 
 """
     merge(a::Arguments, b::Arguments)
@@ -70,7 +61,12 @@ end
 ```
 """
 push(a::Arguments, positional...; keyword...) =
-  @chain positional Arguments(keyword) merge(a, _)
+  @chain begin
+      keyword
+      DataStructures.OrderedDict()
+      Arguments(positional, _)
+      merge(a, _)
+  end
 
 export unshift
 """
@@ -91,8 +87,11 @@ end
 @test unshift_test == collect_arguments(1, 2, a = 3)
 ```
 """
-unshift(a::Arguments, positional...) =
-    @chain positional Arguments([]) merge(a)
+unshift(a::Arguments, positional...) = @chain begin
+    positional
+    Arguments( DataStructures.OrderedDict() )
+    merge(a)
+end
 
 export LazyCall
 """
@@ -119,11 +118,14 @@ Easy way to build an [`Arguments`](@ref) type.
 ```julia
 a = collect_arguments(1, 2, a = 3, b = 4)
 @test a.positional == (1, 2)
-@test a.keyword == Dict{Symbol, Any}(:a => 3, :b => 4)
+@test a.keyword == DataStructures.OrderedDict{Symbol, Any}(:a => 3, :b => 4)
 ```
 """
-collect_arguments(positional...; keyword...) =
-    @chain positional Arguments(keyword)
+collect_arguments(positional...; keyword...) = @chain begin
+    keyword
+    DataStructures.OrderedDict()
+    Arguments(positional, _)
+end
 
 export collect_call
 """
@@ -138,8 +140,12 @@ l = collect_call(vcat, [1, 2], [3, 4])
 @test l.arguments == collect_arguments([1, 2], [3, 4])
 ```
 """
-collect_call(f, positional...; keyword...) =
-    @chain positional Arguments(keyword) LazyCall(f)
+collect_call(f, positional...; keyword...) = @chain begin
+    keyword
+    DataStructures.OrderedDict()
+    Arguments(positional, _)
+    LazyCall(f)
+end
 
 import Base.==
 
@@ -204,8 +210,7 @@ end
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(a::Arguments, f::Function) =
-    @chain a.keyword collect f(a.positional...; _...)
+Base.run(a::Arguments, f::Function) = f(a.positional...; a.keyword...)
 
 """
      run(l::LazyCall, f::Function)
@@ -225,21 +230,25 @@ end
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(l::LazyCall, f::Function) =
-    @chain l.arguments unshift(l.function_call) run(f)
+Base.run(l::LazyCall, f::Function) = @chain begin
+    l.arguments
+    unshift(l.function_call)
+    run(f)
+end
 
 export lazy_call
 """
     @lazy_call(e)
 
 Will break apart a function call into a [`LazyCall`](@ref) object.
-Cannot handle keyword arguments at the moment.
 
 # Examples
 ```julia
-@test ( @lazy_call +(1, 2) ) == collect_call(+, 1, 2)
+test_function(arguments...; keyword_arguments...) =
+    (arguments, keyword_arguments)
 
-@test ( @lazy_call(1) ) == 1
+@test ( @lazy_call test_function(1, 2, a= 3) ) ==
+    collect_call(test_function, 1, 2, a = 3)
 ```
 """
 lazy_call(e) =
@@ -261,7 +270,11 @@ function break_up_block(e)
      end
  end
 
-break_up_blocks(es...) = @chain es map(break_up_block, _) vcat(_...)
+break_up_blocks(es...) = @chain begin
+    es
+    map(break_up_block, _)
+    vcat(_...)
+end
 
 export push_block
 """
@@ -284,7 +297,11 @@ end
 @test push_test == @chain 1 collect_arguments push(2, a = 3)
 ```
 """
-push_block(es...) = @chain es break_up_blocks(_...) Expr(:call, :push, _...)
+push_block(es...) = @chain begin
+    es
+    break_up_blocks(_...)
+    Expr(:call, :push, _...)
+end
 
 @nonstandard push_block
 export @push_block
@@ -309,8 +326,11 @@ end
 @test arguments_test == collect_arguments(1, 2, a = 3)
 ```
 """
-arguments_block(es...) =
-     @chain es break_up_blocks(_...) Expr(:call, :collect_arguments, _...)
+arguments_block(es...) = @chain begin
+    es
+    break_up_blocks(_...)
+    Expr(:call, :collect_arguments, _...)
+end
 
 @nonstandard arguments_block
 export @arguments_block

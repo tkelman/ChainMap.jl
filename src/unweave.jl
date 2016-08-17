@@ -7,7 +7,7 @@ double_match(e, head1, head2) =
 function replace_key(e)
     replace_symbol = gensym()
     if @chain e double_match(:parameters, :...)
-        @chain replace_symbol Expr(:..., _)
+        @chain replace_symbol Expr(:..., _) Expr(:parameters, _)
     elseif @chain e MacroTools.isexpr(:...)
         @chain replace_symbol Expr(:..., _)
     else
@@ -15,15 +15,26 @@ function replace_key(e)
     end
 end
 
+unparameterize(e) = e
+unparameterize(e::Expr) =
+    if e.head == :parameters && length(e.args) == 1
+        e.args[1]
+    else
+        e
+    end
+
 function add_key!(d, key)
     if @chain d haskey(key) !
         d[key] = replace_key(key)
     end
-    d[key]
+    unparameterize( d[key] )
 end
 
-map_expression(f, e::Expr) =
-    @chain e.args map(f, _) Expr(e.head, _...)
+map_expression(f, e::Expr) = @chain begin
+    e.args
+    map(f, _)
+    Expr(e.head, _...)
+end
 
 replace_record!(e, d) = e
 replace_record!(e::Expr, d) =
@@ -38,26 +49,25 @@ function replace_record(e::Expr)
     (e_replace, d)
 end
 
-function move_to_last(o::DataStructures.OrderedDict, f::Function)
-    to_last = @chain f filter(o)
-    if length(to_last) > 1
-        error("A maximum of one splatted positional and one splatted keyword argument allowed")
+negate(f) = (k, v) -> !f(k, v)
+
+function dots_to_back(o::DataStructures.OrderedDict)
+    is_dots = (k, v) -> @chain k MacroTools.isexpr(:...)
+    to_back = @chain o filter(is_dots, _)
+    if length(to_back) > 1
+        error("Can splat no more than one positional argument")
     end
-    @chain (k, v) -> !f(k, v) filter(o) merge(to_last)
+    @chain o filter(negate(is_dots), _) merge(to_back)
 end
 
-move_to_last(d::Dict, f::Function) =
-    @chain d DataStructures.OrderedDict() move_to_last(f)
-
-reorder_arguments(d) = @chain begin
-    d
-    move_to_last( (k, v) -> @chain k MacroTools.isexpr(:...) )
-    move_to_last( (k, v) -> @chain k double_match(:parameters, :...) )
+function parameters_to_front(o::DataStructures.OrderedDict)
+    is_parameters = (k, v) -> @chain k double_match(:parameters, :...)
+    to_front = @chain o filter(is_parameters, _)
+    if length(to_front) > 1
+        error("Can splat no more than one keyword argument")
+    end
+    @chain o filter(negate(is_parameters), _) merge(to_front, _)
 end
-
-lazy_anonymous(arguments, f) = :($arguments -> $f)
-lazy_LazyCall(arguments, f) = :(LazyCall($arguments, $f))
-lazy_collect_arguments(es) = :(collect_arguments($(es...)))
 
 export unweave
 """
@@ -67,11 +77,11 @@ Interprets `e` as a function with its positional arguments wrapped in tildas and
 interwoven into it.
 
 Will return a [`LazyCall`](@ref) object containing both an anonymous function
-and its arguments. Keyword arguments can be woven in. No more than one splatted
-positional argument can be woven in. No more than one splatted keyword can be
-woven in provided there is a `;` visible both inside and outside the tilda. Make
-multi-line functions by wrapping in a begin block. To use `~` as a function, use
-the alias [`bitnot`](@ref).
+and its arguments. No more than one splatted positional argument can be woven
+in. No more than one splatted keyword argument can be woven in provided there is
+a `;` visible both inside and outside the tilda. Make multi-line functions by
+wrapping in a begin block. To use `~` as a function, use the alias
+[`bitnot`](@ref).
 
 # Examples
 
@@ -89,14 +99,14 @@ end
 
 keyword_test(; keyword_arguments...) = keyword_arguments
 
-a = keyword_test(a = 1, b = 3)
-e = :(keyword_test(~(b = 2); ~(;a...)))
-unweave_keyword_test = @chain
-    @unweave keyword_test(~(b = 2); ~(;a...))
+a = keyword_test(a = 1, b = 2)
+
+unweave_keyword_test = @chain begin
+    @unweave keyword_test(; c = 3, ~(; a...))
     run
 end
 
-@test unweave_keyword_test == keyword_test(b = 2; a... )
+@test unweave_keyword_test == keyword_test(c = 3; a... )
 
 # No arguments marked with tildas detected
 @test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
@@ -111,20 +121,27 @@ function unweave(e::Expr)
         error("No arguments marked with tildas detected")
     end
 
-    d_reorder = @chain d reorder_arguments
+    d_reorder = o = @chain begin
+        d
+        DataStructures.OrderedDict()
+        parameters_to_front
+        dots_to_back
+    end
 
-    anonymous_function =
-      @chain d_reorder values Expr(:tuple, _...) lazy_anonymous(e_replace)
+    anonymous_function = @chain begin
+        d_reorder
+        values
+        Expr(:tuple, _...)
+        Expr(:->, _, e_replace)
+    end
 
     @chain begin
         d_reorder
         keys
-        lazy_collect_arguments
-        lazy_LazyCall(anonymous_function)
+        Expr(:call, :collect_arguments, _...)
+        Expr(:call, :LazyCall, _, anonymous_function)
     end
 end
-
-tilda(e) = :(~($e))
 
 """
      @unweave(insert_this, into_that)
@@ -147,8 +164,12 @@ end
       map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
 ```
 """
-unweave(insert_this, into_that) =
-     @chain insert_this tilda chain(into_that) unweave
+unweave(insert_this, into_that) = @chain begin
+    insert_this
+    Expr(:call, :~, _)
+    chain(into_that)
+    unweave
+end
 
 
 export bitnot

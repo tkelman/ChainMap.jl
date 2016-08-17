@@ -1,7 +1,7 @@
 using ChainMap
+import DataStructures
 using Base.Test
 
-@testset "ChainMap" begin
 merge_test = @chain begin
     collect_arguments(1, a = 2, b = 3)
     merge(collect_arguments(4, a = 5, c = 6) )
@@ -22,7 +22,7 @@ end
 @test unshift_test == collect_arguments(1, 2, a = 3)
 a = collect_arguments(1, 2, a = 3, b = 4)
 @test a.positional == (1, 2)
-@test a.keyword == Dict{Symbol, Any}(:a => 3, :b => 4)
+@test a.keyword == DataStructures.OrderedDict{Symbol, Any}(:a => 3, :b => 4)
 l = collect_call(vcat, [1, 2], [3, 4])
 @test l.function_call == vcat
 @test l.arguments == collect_arguments([1, 2], [3, 4])
@@ -56,9 +56,11 @@ run_test = @chain begin
 end
 
 @test run_test == map(vcat, [1, 2], [3, 4])
-@test ( @lazy_call +(1, 2) ) == collect_call(+, 1, 2)
+test_function(arguments...; keyword_arguments...) =
+    (arguments, keyword_arguments)
 
-@test ( @lazy_call(1) ) == 1
+@test ( @lazy_call test_function(1, 2, a= 3) ) ==
+    collect_call(test_function, 1, 2, a = 3)
 push_test = @chain begin
     1
     collect_arguments
@@ -97,17 +99,21 @@ keyword_test(; keyword_arguments...) = keyword_arguments
 @test (@chain keyword_test(a = 1) keyword_test(b = 2; _...) ) ==
       keyword_test(b = 2, a = 1)
 @test (@chain 1 vcat) == vcat(1)
+@test 1 == @chain 1
+
 chain_block = @chain begin
     1
     vcat(2)
 end
 
 @test chain_block == @chain 1 vcat(2)
-
-# Cannot chain only one argument
-@test_throws ErrorException ChainMap.chain(:(1 + 1))
 @test ( @chain 1 vcat(2) vcat(3) ) ==
       ( @chain ( @chain 1 vcat(2) ) vcat(3) )
+lambda_function = @lambda vcat(2) vcat(3)
+@test lambda_function(1) == vcat(1, 2, 3)
+
+lambda_function_2 = @lambda -(_, 1)
+@test lambda_function_2(2) == 1
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
@@ -121,14 +127,14 @@ end
 
 keyword_test(; keyword_arguments...) = keyword_arguments
 
-a = keyword_test(a = 1, b = 3)
+a = keyword_test(a = 1, b = 2)
 
-unweave_keyword_test = @chain
-    @unweave keyword_test(~(b = 2); ~(;a...))
+unweave_keyword_test = @chain begin
+    @unweave keyword_test(; c = 3, ~(; a...))
     run
 end
 
-@test unweave_keyword_test == keyword_test(b = 2; a... )
+@test unweave_keyword_test == keyword_test(c = 3; a... )
 
 # No arguments marked with tildas detected
 @test_throws ErrorException ChainMap.unweave(:( 1 + 1 ))
@@ -159,15 +165,14 @@ chainback(a, b, c) = :($c($b, $a))
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
-fancy = @chain begin
+unweave_test = @chain begin
     A
-    begin @unweave vcat(~_, ~_, ~[3, 4], ~(B...) ) end
+    @unweave vcat(~[3, 4], ~(B...) )
     run(map)
 end
 
-boring = map((a, c, b...) -> vcat(a, a, c, b...), A, [3, 4], B...)
-
-@test fancy == boring
+@test unweave_test ==
+      map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
 along() = "dummy function; could be a fancy view some day"
 
 Base.run(A::AbstractArray,
@@ -182,7 +187,7 @@ fancy = @chain begin
     reshape(2, 2)
     @arguments_block begin
         map
-        x -> x + 1
+        @lambda *(2) -(1)
         @lazy_call along(1)
         reduce
         +
@@ -190,7 +195,6 @@ fancy = @chain begin
     run
 end
 
-boring = mapreducedim(x -> x + 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
+boring = mapreducedim(x -> 2*x - 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
 
 @test fancy == boring
-end
