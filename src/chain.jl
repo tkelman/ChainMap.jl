@@ -116,7 +116,7 @@ export lambda
 """
     @lambda(es...)
 
-`chain` together `(_, es...)`, then convert to an anonymous function with _ as
+[`chain`](@ref) together `(_, es...)`, then convert to an anonymous function with _ as
 the input variable.
 
 # Examples
