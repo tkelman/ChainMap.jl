@@ -64,7 +64,7 @@ fancy = @chain begin
     reshape(2, 2)
     @arguments_block begin
         map
-        @lambda *(2) -(1)
+        @lambda *(2) -(_, 1)
         @lazy_call along(1)
         reduce
         +
