@@ -46,6 +46,9 @@ end
 
 ### Example 2
 
+Here, define a custom way to combine several function calls into one more
+efficient one.
+
 ```julia
 along() = "dummy function; could be a fancy view some day"
 
