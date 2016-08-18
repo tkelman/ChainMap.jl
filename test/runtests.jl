@@ -126,17 +126,19 @@ keyword_test(; keyword_arguments...) = keyword_arguments
 
 a = keyword_test(a = 1, b = 2)
 
-unweave_keyword_test = @chain begin
-    @unweave keyword_test(; c = 3, ~(; a...))
-    run
-end
+# >= 0.5 only
+# unweave_keyword_test = @chain begin
+#     @unweave keyword_test(; c = 3, ~(; a...))
+#     run
+# end
 
-@test unweave_keyword_test == keyword_test(c = 3; a... )
+# @test unweave_keyword_test == keyword_test(c = 3; a... )
 
 # Can splat no more than one positional argument
 @test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
+# >= 0.5 only
 # Can splat no more than one keyword argument
-@test_throws ErrorException ChainMap.unweave(:( ~(;a...) + ~(;b...) ))
+# @test_throws ErrorException ChainMap.unweave(:( ~(;a...) + ~(;b...) ))
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
