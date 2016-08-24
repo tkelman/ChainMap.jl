@@ -1,5 +1,17 @@
+type AnnotatedLine
+    line::Expr
+    expr
+end
+
+function annotate(args)
+    odd_indices = 1:2:length(args)
+    args_split = [AnnotatedLine(args[i], args[i+1] ) for i in odd_indices]
+end
+
+Base.convert(::Type{Expr}, a::AnnotatedLine) = Expr(:block, a.line, a.expr)
+
 is_(e) =
-    if MacroTools.isexpr(e, :parameters, :..., :kw)
+    if MacroTools.isexpr(e, :parameters, :..., :kw, :~)
         contains_(e)
     else
         e == :_
@@ -20,7 +32,12 @@ function insert_(e::Expr)
     end
 end
 
-expose(into_that, insert_this) = :(let _ = $insert_this; $into_that; end)
+insert_(a::AnnotatedLine) = AnnotatedLine(a.line, insert_(a.expr))
+
+expose(tail::Expr, head) = Expr(:let, tail, Expr(:(=), :_, head))
+
+expose(tail::AnnotatedLine, head) =
+    AnnotatedLine(tail.line, expose(tail.expr, convert(Expr, head)))
 
 export chain
 """
@@ -35,6 +52,8 @@ If
     before or after `;`
 
 `_` will be inserted as the first argument to `into_that`.
+
+If `into_that` is a closure, it will be called on `insert_this`.
 
 To prevent insertion into the first argument, but still reinterpret `_`,
 wrap `into_that` in a `begin` block.
@@ -55,13 +74,12 @@ keyword_test(; keyword_arguments...) = keyword_arguments
 
 @test keyword_test(b = 2, a = 1) ==
     @chain keyword_test(a = 1) keyword_test(b = 2; _...)
-
 ```
 """
 chain(insert_this, into_that::Expr) = expose(insert_(into_that), insert_this)
 
 """
-    @chain on_that call_this
+    @chain on_that call_this::Symbol
 
 Call `call_this` on `on_that`
 
@@ -70,30 +88,13 @@ Call `call_this` on `on_that`
 @test vcat(1) == @chain 1 vcat
 ```
 """
-chain(on_that, call_this) = :($call_this($on_that))
+chain(on_that, call_this::Symbol) = :($call_this($on_that))
 
-"""
-    @chain e::Expr
-
-Separate single begin blocks out into lines and recur. Return single non-blocks.
-
-# Examples
-```julia
-@test 1 == @chain 1
-
-chain_block = @chain begin
-    1
-    vcat(2)
-end
-
-@test chain_block == @chain 1 vcat(2)
-```
-"""
-chain(e) =
-    if MacroTools.isexpr(e, :block)
-        chain(MacroTools.rmlines(e).args...)
+chain(head, tail::AnnotatedLine) =
+    if typeof(tail.expr) <: Expr
+        expose(insert_(tail), head)
     else
-        e
+        Expr(:call, convert(Expr, tail), convert(Expr, head))
     end
 
 """
@@ -107,7 +108,32 @@ Reduce `@chain` over `es`
     @chain ( @chain 1 vcat(2) ) vcat(3)
 ```
 """
-chain(es...) = reduce(chain, es)
+chain(es...) = foldl(chain, es)
+
+"""
+    @chain e
+
+Separate single begin blocks out into lines and recur. Return single non-blocks.
+
+# Examples
+```julia
+@test 1 == @chain 1
+
+chain_block = @chain begin
+    1
+    vcat
+    vcat(2)
+end
+
+@test chain_block == @chain 1 vcat(2)
+```
+"""
+chain(e) =
+    if MacroTools.isexpr(e, :block)
+        convert(Expr, chain(annotate(e.args)...) )
+    else
+        e
+    end
 
 @nonstandard chain
 export @chain
