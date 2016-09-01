@@ -96,18 +96,18 @@ keyword_test(; keyword_arguments...) = keyword_arguments
 
 a = keyword_test(a = 1, b = 2)
 
-# unweave_keyword_test = @chain begin
-#      @unweave keyword_test(c = 3; ~(a...))
-#      run(_)
-# end
+unweave_keyword_test = @chain begin
+    @unweave keyword_test(c = 3; ~(a...))
+    run(_)
+end
 
-# @test unweave_keyword_test == keyword_test(c = 3; a... )
+@test unweave_keyword_test == keyword_test(c = 3; a... )
 
 # Can splat no more than one positional argument
 @test_throws ErrorException unweave(:( ~(a...) + ~(b...) ))
 
 # Can splat no more than one keyword argument
-# @test_throws ErrorException unweave(:( ~(;a...) + ~(;b...) ))
+@test_throws ErrorException unweave(:( ~(;a...) + ~(;b...) ))
 ```
 """
 function unweave(e)
@@ -166,6 +166,9 @@ result = @unweave broadcast(lift = true) ~a + ~b
 
 @test result.values[1] == 4
 @test result.isnull == [false, true]
+
+# `f` must be in the form `function_call_(arguments__)`
+@test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
 ```
 """
 function unweave(f::Expr, e)
