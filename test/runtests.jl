@@ -172,8 +172,8 @@ keyword_test(; keyword_arguments...) = keyword_arguments
 a = keyword_test(a = 1, b = 2)
 
 unweave_keyword_test = @chain begin
-     @unweave keyword_test(c = 3; ~(a...))
-     run(_)
+    @unweave keyword_test(c = 3; ~(a...))
+    run(_)
 end
 
 @test unweave_keyword_test == keyword_test(c = 3; a... )
@@ -204,4 +204,7 @@ result = @unweave broadcast(lift = true) ~a + ~b
 
 @test result.values[1] == 4
 @test result.isnull == [false, true]
+
+# `f` must be in the form `function_call_(arguments__)`
+@test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
 @test bitnot(1) == ~1
