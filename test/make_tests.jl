@@ -1,0 +1,68 @@
+using ChainMap
+
+"""
+    code_lines(file_in)
+
+A function which extracts just the lines containing code from markdown.
+
+```julia
+file_in = joinpath("C:\\", "Users", "jsnot",
+                   ".julia", "v0.4", "ChainMap",
+                   "src", "chain.jl")
+```
+"""
+function code_lines(file_in)
+  text = readlines(file_in)
+
+  starts = map(_ -> ismatch(r"^```.+", chomp(_) ), text)
+  ends = map(_ -> chomp(_) == "```", text)
+  Test.@test sum(starts) == sum(ends)
+
+  @chain begin
+      cumsum(starts) - cumsum(ends) .== 1
+      text[_]
+      @unweave filter !startswith(~_, "```")
+      @unweave map replace(~_, r"\\", "")
+  end
+
+end
+
+"""
+    make_tests(path, head = "")
+
+Populates your runtest.jl file with all of the julia code in your docstrings.
+
+An optional header string, or vector of header strings, `head`, can be added.
+`path` is the path to your package.
+
+# Examples
+```julia
+path_in = "C:\\Users\\jsnot\\.julia\\v0.4\\ChainMap"
+head = ["using ChainMap", "import DataStructures", "import NullableArrays",
+        "import DataFrames", "using Base.Test"]
+make_tests(path, head)
+```
+"""
+function make_tests(path_in, head = "")
+    head_cat = @chain begin
+        head
+        @unweave map ~_ * "\n"
+        *(_...)
+    end
+
+    @chain begin
+        path_in
+        joinpath(_, "src")
+        readdir(_)
+        @unweave map joinpath(path_in, "src", ~_)
+        [_; joinpath(path_in, "README.md") ]
+        @unweave map code_lines(~_)
+        vcat(head_cat, _...)
+        write(joinpath(path_in, "test", "runtests.jl"), _)
+    end
+end
+
+path = "C:\\Users\\jsnot\\.julia\\v0.4\\ChainMap"
+head = ["using ChainMap", "import DataStructures", "import NullableArrays",
+        "import DataFrames", "using Base.Test"]
+make_tests(path, head)

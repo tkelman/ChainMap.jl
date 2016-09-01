@@ -33,7 +33,7 @@ chainback(a, b, c) = :(\$c(\$b, \$a))
 @test vcat(3, 2) == @chainback 2 3 vcat
 
 "See documentation of [`binaryfun`](@ref)" ==
-    @chain (@doc @binaryfun) string chomp
+    @chain (@doc @binaryfun) string(_) chomp(_)
 
 ```
 """

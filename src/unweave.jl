@@ -1,72 +1,67 @@
-double_match(e, head1, head2) =
-    MacroTools.isexpr(e, head1) &&
-    length(e.args) > 0 &&
-    @chain e.args[1] MacroTools.isexpr(head2)
-
-
-function replace_key(e)
-    replace_symbol = gensym()
-    if @chain e double_match(:parameters, :...)
-        @chain replace_symbol Expr(:..., _) Expr(:parameters, _)
-    elseif @chain e MacroTools.isexpr(:...)
-        @chain replace_symbol Expr(:..., _)
-    else
-        replace_symbol
-    end
-end
-
-unparameterize(e) = e
-unparameterize(e::Expr) =
-    if e.head == :parameters && length(e.args) == 1
-        e.args[1]
-    else
-        e
-    end
-
-function add_key!(d, key)
-    if @chain d haskey(key) !
-        d[key] = replace_key(key)
-    end
-    unparameterize( d[key] )
-end
-
-map_expression(f, e::Expr) = @chain begin
-    e.args
-    map(f, _)
-    Expr(e.head, _...)
-end
-
-replace_record!(e, d) = e
-replace_record!(e::Expr, d) =
-    MacroTools.@match e begin
-        ~(key_) => @chain d add_key!(key)
-        e_ => @chain e -> replace_record!(e, d) map_expression(e)
-    end
-
-function replace_record(e::Expr)
-    d = Dict()
-    e_replace = @chain e replace_record!(d)
-    (e_replace, d)
-end
-
-negate(f) = (k, v) -> !f(k, v)
+"""
+# Examples
+```julia
+f = x -> x == :a
+@test ChainMap.negate(f)(:b)
+```
+"""
+negate(f) = (args...; kwargs...) -> !(f(args...; kwargs...))
 
 function dots_to_back(o::DataStructures.OrderedDict)
-    is_dots = (k, v) -> @chain k MacroTools.isexpr(:...)
-    to_back = @chain o filter(is_dots, _)
+    is_dots = (k, v) -> MacroTools.isexpr(k, :...)
+    to_back = filter(is_dots, o)
     if length(to_back) > 1
         error("Can splat no more than one positional argument")
     end
-    @chain o filter(negate(is_dots), _) merge(to_back)
+    @chain begin
+        o
+        filter(negate(is_dots), _)
+        merge(_, to_back)
+    end
 end
 
 function parameters_to_front(o::DataStructures.OrderedDict)
-    is_parameters = (k, v) -> @chain k double_match(:parameters, :...)
-    to_front = @chain o filter(is_parameters, _)
+    is_parameters = (k, v) -> double_match(k, :parameters, :...)
+    to_front = filter(is_parameters, o)
     if length(to_front) > 1
         error("Can splat no more than one keyword argument")
     end
-    @chain o filter(negate(is_parameters), _) merge(to_front, _)
+    @chain begin
+        o
+        filter(negate(is_parameters), _)
+        merge(to_front, _)
+    end
+end
+
+"""
+    split_anonymous(e::Expr)
+
+Return the component anonymous function and arguments for [`unweave`](@ref).
+
+```julia
+e = :(~_ + 1)
+ChainMap.split_anonymous(e)
+```
+"""
+function split_anonymous(e::Expr)
+    d = Dict()
+    e_replace = replace_record!(e, d)
+
+    d_reorder = @chain begin
+        d
+        DataStructures.OrderedDict(_)
+        parameters_to_front(_)
+        dots_to_back(_)
+    end
+
+    anonymous_function = @chain begin
+        d_reorder
+        values(_)
+        Expr(:tuple, _...)
+        Expr(:->, _, e_replace)
+    end
+
+    (anonymous_function, keys(d_reorder))
 end
 
 export unweave
@@ -91,7 +86,7 @@ B = ( [5, 6], [7, 8] )
 
 unweave_test = @chain begin
     @unweave vcat(~A, ~[3, 4], ~(B...) )
-    run(map)
+    run(_, map)
 end
 
 @test unweave_test ==
@@ -101,74 +96,95 @@ keyword_test(; keyword_arguments...) = keyword_arguments
 
 a = keyword_test(a = 1, b = 2)
 
-# >= 0.5 only
 # unweave_keyword_test = @chain begin
-#     @unweave keyword_test(; c = 3, ~(; a...))
-#     run
+#      @unweave keyword_test(c = 3; ~(a...))
+#      run(_)
 # end
 
 # @test unweave_keyword_test == keyword_test(c = 3; a... )
 
 # Can splat no more than one positional argument
-@test_throws ErrorException ChainMap.unweave(:( ~(a...) + ~(b...) ))
-# >= 0.5 only
+@test_throws ErrorException unweave(:( ~(a...) + ~(b...) ))
+
 # Can splat no more than one keyword argument
-# @test_throws ErrorException ChainMap.unweave(:( ~(;a...) + ~(;b...) ))
+# @test_throws ErrorException unweave(:( ~(;a...) + ~(;b...) ))
 ```
 """
-function unweave(e::Expr)
-    e_replace, d = @chain e replace_record
-
-    d_reorder = o = @chain begin
-        d
-        DataStructures.OrderedDict()
-        parameters_to_front
-        dots_to_back
-    end
-
-    anonymous_function = @chain begin
-        d_reorder
-        values
-        Expr(:tuple, _...)
-        Expr(:->, _, e_replace)
-    end
-
+function unweave(e)
+    anonymous_function, arguments = split_anonymous(e::Expr)
     @chain begin
-        d_reorder
-        keys
+        arguments
         Expr(:call, :collect_arguments, _...)
         Expr(:call, :LazyCall, _, anonymous_function)
     end
 end
 
 """
-     @unweave(insert_this, into_that)
+    @unweave f e
 
-Mark `insert_this` with a tilda, [`chain`](@ref) it `into_that`, and `unweave`
-the result.
+`unweave` `e` then run `f` on the component parts.
+
 
 # Examples
 ```julia
-A = [1, 2]
-B = ( [5, 6], [7, 8] )
+e = :(vcat(~a, ~b) )
+f = :broadcast
+unweave(f, e)
 
-unweave_test = @chain begin
-    A
-    @unweave vcat(~[3, 4], ~(B...) )
-    run(map)
-end
+a = [1, 2]
+b = [3, 4]
 
-@test unweave_test ==
-      map((a, c, b...) -> vcat(a, c, b...), A, [3, 4], B...)
+@test broadcast((a, b) -> vcat(a, b), a, b) ==
+    @unweave broadcast vcat(~a, ~b)
 ```
 """
-unweave(insert_this, into_that) = @chain begin
-    insert_this
-    Expr(:call, :~, _)
-    chain(into_that)
-    unweave
+function unweave(f, e)
+
+    anonymous_function, anonymous_arguments = split_anonymous(e)
+
+    Expr(:call, f, anonymous_function, anonymous_arguments...)
+
 end
 
+"""
+    @unweave(f::Expr, e)
+
+`unweave` `e` then insert the function as the first argument to `f` and
+the woven arguments at the end of the arguments of `f`.
+
+# Examples
+```julia
+e = :(~a + ~b)
+f = :(NullableArrays.broadcast(lift = true))
+
+unweave(f, e)
+
+a = NullableArrays.NullableArray([1, 2])
+b = NullableArrays.NullableArray([3, 4], [false, true])
+
+result = @unweave broadcast(lift = true) ~a + ~b
+
+@test result.values[1] == 4
+@test result.isnull == [false, true]
+```
+"""
+function unweave(f::Expr, e)
+
+    function_test = MacroTools.@capture f function_call_(arguments__)
+
+    if !(function_test)
+        error("`f` must be in the form `function_call_(arguments__)`")
+    end
+
+    anonymous_function, anonymous_arguments = split_anonymous(e)
+
+    Expr(:call, function_call, anonymous_function,
+         arguments..., anonymous_arguments...)
+
+end
+
+@nonstandard unweave
+export @unweave
 
 export bitnot
 """
@@ -182,6 +198,3 @@ Alias for `~` for use within [`@unweave`](@ref)
 ```
 """
 bitnot = ~
-
-@nonstandard unweave
-export @unweave

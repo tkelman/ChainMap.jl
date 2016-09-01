@@ -2,7 +2,7 @@ export Arguments
 """
     type Arguments
         positional::Tuple
-        keyword::DataStrucutes.OrderedDict{Symbol, Any}
+        keyword::Dict{Symbol, Any}
     end
 
 Will store positional and keyword arguments for later use. Create
@@ -12,85 +12,7 @@ arguments, and run with [`run`](@ref).
 """
 type Arguments
   positional::Tuple
-  keyword::DataStructures.OrderedDict{Symbol, Any}
-end
-
-"""
-    merge(a::Arguments, b::Arguments)
-
-Merge two [`Arguments`](@ref) types.
-
-Positional arguments are added at the end, and new keyword arguments
-are added to old keyword arguments, or, if the keys match, overwrite
-them.
-
-# Examples
-```julia
-merge_test = @chain begin
-    collect_arguments(1, a = 2, b = 3)
-    merge(collect_arguments(4, a = 5, c = 6) )
-end
-
-@test merge_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
-```
-"""
-function Base.merge(a::Arguments, b::Arguments)
-    positional = (a.positional..., b.positional...)
-    @chain a.keyword merge(b.keyword) Arguments(positional, _)
-end
-
-export push
-"""
-    push(arguments::Arguments, positional...; keyword...)
-
-Add positional and keyword arguments to an already existing
-[`Arguments`](@ref) type.
-
-Positional arguments are added at the end, and new keyword arguments
-are added to old keyword arguments, or, if the keys match, overwrite
-them.
-
-# Examples
-```julia
-push_test = @chain begin
-    collect_arguments(1, a = 2, b = 3)
-    push(4, a = 5, c = 6)
-end
-
-@test push_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
-```
-"""
-push(a::Arguments, positional...; keyword...) =
-  @chain begin
-      keyword
-      DataStructures.OrderedDict()
-      Arguments(positional, _)
-      merge(a, _)
-  end
-
-export unshift
-"""
-    unshift(arguments::Arguments, positional...)
-
-Add positional arguments to an already existing [`Arguments`](@ref)
-type.
-
-New arguments are added at the start.
-
-# Examples
-```julia
-unshift_test = @chain begin
-    collect_arguments(2, a = 3)
-    unshift(1)
-end
-
-@test unshift_test == collect_arguments(1, 2, a = 3)
-```
-"""
-unshift(a::Arguments, positional...) = @chain begin
-    positional
-    Arguments( DataStructures.OrderedDict() )
-    merge(a)
+  keyword::Dict{Symbol, Any}
 end
 
 export LazyCall
@@ -108,6 +30,156 @@ type LazyCall{T <: Function}
     function_call::T
 end
 
+"""
+    merge(a::Arguments, b::Arguments)
+
+Merge two [`Arguments`](@ref) types.
+
+Positional arguments are added at the end, and new keyword arguments
+are added to old keyword arguments, or, if the keys match, overwrite
+them.
+
+# Examples
+```julia
+merge_test = @chain begin
+    collect_arguments(1, a = 2, b = 3)
+    merge(_, collect_arguments(4, a = 5, c = 6) )
+end
+
+@test merge_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
+```
+"""
+function Base.merge(a::Arguments, b::Arguments)
+    positional = (a.positional..., b.positional...)
+    keyword = merge(a.keyword, b.keyword)
+    Arguments(positional, keyword)
+end
+
+"""
+    merge(lazy_call::LazyCall, arguments::Arguments)
+
+`merge` `arguments` into the `arguments` of `lazy_call`.
+
+# Examples
+```julia
+merge_test = @chain begin
+    collect_arguments([1, 2])
+    unshift(_, vcat)
+    LazyCall(_, map)
+    merge(_, collect_arguments([3, 4]) )
+    run(_)
+end
+
+@test merge_test == [[1, 3], [2, 4]]
+```
+"""
+Base.merge(lazy_call::LazyCall, arguments::Arguments) = @chain begin
+    lazy_call.arguments
+    merge(_, arguments)
+    LazyCall(_, lazy_call.function_call)
+end
+
+export push
+"""
+    push(arguments::Arguments, positional...; keyword...)
+
+Add positional and keyword arguments to an already existing
+[`Arguments`](@ref) type.
+
+Positional arguments are added at the end, and new keyword arguments
+are added to old keyword arguments, or, if the keys match, overwrite
+them.
+
+# Examples
+```julia
+push_test = @chain begin
+    collect_arguments(1, a = 2, b = 3)
+    push(_, 4, a = 5, c = 6)
+end
+
+@test push_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
+```
+"""
+push(a::Arguments, positional...; keyword...) =
+  @chain begin
+      keyword
+      Dict(_)
+      Arguments(positional, _)
+      merge(a, _)
+  end
+
+"""
+    push(lazy_call::LazyCall, positional...; keyword...)
+
+`push` to the `arguments` of `lazy_call`.
+
+# Examples
+```julia
+push_test = @chain begin
+    collect_arguments([1, 2])
+    unshift(_, vcat)
+    LazyCall(_, map)
+    push(_, [3, 4])
+    run(_)
+end
+
+@test push_test == [[1, 3], [2, 4]]
+```
+"""
+push(lazy_call::LazyCall, positional...; keyword...) = @chain begin
+    lazy_call.arguments
+    push(_, positional...; keyword...)
+    LazyCall(_, lazy_call.function_call)
+end
+
+export unshift
+"""
+    unshift(arguments::Arguments, positional...)
+
+Add positional arguments to an already existing [`Arguments`](@ref)
+type.
+
+New arguments are added at the start.
+
+# Examples
+```julia
+unshift_test = @chain begin
+    collect_arguments(2, a = 3)
+    unshift(_, 1)
+end
+
+@test unshift_test == collect_arguments(1, 2, a = 3)
+```
+"""
+unshift(a::Arguments, positional...) = @chain begin
+    positional
+    Arguments(_, Dict() )
+    merge(_, a)
+end
+
+"""
+    unshift(lazy_call::LazyCall, positional...)
+
+`unshift` to the `arguments` of `lazy_call`.
+
+# Examples
+```julia
+unshift_test = @chain begin
+    collect_arguments([1, 2], [3, 4])
+    LazyCall(_, map)
+    unshift(_, vcat)
+    run(_)
+end
+
+@test unshift_test == [[1, 3], [2, 4]]
+```
+"""
+unshift(lazy_call::LazyCall, positional...) = @chain begin
+    lazy_call.arguments
+    unshift(_, positional...)
+    LazyCall(_, lazy_call.function_call)
+end
+
 export collect_arguments
 """
     collect_arguments(positional...; keyword...)
@@ -118,12 +190,12 @@ Easy way to build an [`Arguments`](@ref) type.
 ```julia
 a = collect_arguments(1, 2, a = 3, b = 4)
 @test a.positional == (1, 2)
-@test a.keyword == DataStructures.OrderedDict{Symbol, Any}(:a => 3, :b => 4)
+@test a.keyword == Dict{Symbol, Any}(:a => 3, :b => 4)
 ```
 """
 collect_arguments(positional...; keyword...) = @chain begin
     keyword
-    DataStructures.OrderedDict()
+    Dict(_)
     Arguments(positional, _)
 end
 
@@ -142,9 +214,9 @@ l = collect_call(vcat, [1, 2], [3, 4])
 """
 collect_call(f, positional...; keyword...) = @chain begin
     keyword
-    DataStructures.OrderedDict()
+    Dict(_)
     Arguments(positional, _)
-    LazyCall(f)
+    LazyCall(_, f)
 end
 
 import Base.==
@@ -165,15 +237,15 @@ Call `run` on the [`Arguments`](@ref) in `a`
 ```julia
 run_test = @chain begin
     collect_arguments([1, 2], [3, 4])
-    unshift(vcat)
-    collect_arguments(map)
-    run
+    unshift(_, vcat)
+    collect_arguments(_, map)
+    run(_)
 end
 
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(a::Arguments) = @chain a run(run)
+Base.run(a::Arguments) = run(a, run)
 
 """
      run(l::LazyCall)
@@ -184,15 +256,15 @@ Call `l.function_call` on the [`Arguments`](@ref) in `l.arguments`
 ```julia
 run_test = @chain begin
     collect_arguments([1, 2], [3, 4])
-    unshift(vcat)
-    LazyCall(map)
-    run
+    unshift(_, vcat)
+    LazyCall(_, map)
+    run(_)
 end
 
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(l::LazyCall) = @chain l.arguments run(l.function_call)
+Base.run(l::LazyCall) = run(l.arguments, l.function_call)
 
 """
      run(a::Arguments, f::Function)
@@ -203,8 +275,8 @@ Call `f` on the [`Arguments`](@ref) in `a`
 ```julia
 run_test = @chain begin
     collect_arguments([1, 2], [3, 4])
-    unshift(vcat)
-    run(map)
+    unshift(_, vcat)
+    run(_, map)
 end
 
 @test run_test == map(vcat, [1, 2], [3, 4])
@@ -217,14 +289,14 @@ Base.run(a::Arguments, f::Function) = f(a.positional...; a.keyword...)
 
 Insert `l.function_call` as the first positional argument in
 `l.arguments`, the standard position for functional programming,
-then call `f` on the result.
+then `run` `f` on the result.
 
 # Examples
 ```julia
 run_test = @chain begin
     collect_arguments([1, 2], [3,4])
-    LazyCall(vcat)
-    run(map)
+    LazyCall(_, vcat)
+    run(_, map)
 end
 
 @test run_test == map(vcat, [1, 2], [3, 4])
@@ -232,8 +304,8 @@ end
 """
 Base.run(l::LazyCall, f::Function) = @chain begin
     l.arguments
-    unshift(l.function_call)
-    run(f)
+    unshift(_, l.function_call)
+    run(_, f)
 end
 
 export lazy_call
@@ -253,84 +325,9 @@ test_function(arguments...; keyword_arguments...) =
 """
 lazy_call(e) =
     MacroTools.@match e begin
-        a_(b__) => :(collect_call($a, $(b...)))
+        a_(b__) => Expr(:call, :collect_call, a, b...)
         a_ => a
     end
 
 @nonstandard lazy_call
 export @lazy_call
-
-function break_up_block(e)
-     if @chain e MacroTools.isexpr(:block)
-         @chain e MacroTools.rmlines() _.args break_up_blocks(_...)
-     elseif @chain e MacroTools.isexpr(:(=))
-         @chain :kw Expr(e.args...)
-     else
-         e
-     end
- end
-
-break_up_blocks(es...) = @chain begin
-    es
-    map(break_up_block, _)
-    vcat(_...)
-end
-
-export push_block
-"""
-    @push_block(es...)
-
-Will break up any begin blocks in `es`, create keyword arguments from
-assignments, and feed them to [`push`](@ref)
-
-# Examples
-```julia
-push_test = @chain begin
-    1
-    collect_arguments
-    @push_block begin
-        2
-        a = 3
-    end
-end
-
-@test push_test == @chain 1 collect_arguments push(2, a = 3)
-```
-"""
-push_block(es...) = @chain begin
-    es
-    break_up_blocks(_...)
-    Expr(:call, :push, _...)
-end
-
-@nonstandard push_block
-export @push_block
-
-export arguments_block
-"""
-    @arguments_block(es...)
-
-Will break up any begin blocks in `es` into lines, create keyword arguments from
-assignments, and feed all arguments to [`collect_arguments`](@ref)
-
-# Examples
-```julia
-arguments_test = @chain begin
-    1
-    @arguments_block begin
-        2
-        a = 3
-    end
-end
-
-@test arguments_test == collect_arguments(1, 2, a = 3)
-```
-"""
-arguments_block(es...) = @chain begin
-    es
-    break_up_blocks(_...)
-    Expr(:call, :collect_arguments, _...)
-end
-
-@nonstandard arguments_block
-export @arguments_block
