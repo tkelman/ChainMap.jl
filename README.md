@@ -49,7 +49,7 @@ heavily to one-more-minute/Lazy.jl.
 
 ## Example 1
 
-How fast an we build a non-standard evaluation transform function?
+How fast can we build a non-standard evaluation transform function?
 
 A vanilla transform function.
 ```julia
@@ -62,7 +62,7 @@ function transform(d; keyword_arguments...)
 end
 ```
 
-A function which combines three macros in ChainMap: `chain`, `with`, and
+A function which combines three macros in `ChainMap`: `chain`, `with`, and
 `unweave`.
 ```julia
 all_in_one(e) = @chain begin
@@ -73,7 +73,7 @@ all_in_one(e) = @chain begin
 end
 ```
 
-Run `all_in_one` on the values of keyword argument.
+Run `all_in_one` on the values of a keyword argument.
 ```julia
 transform_into(e) = MacroTools.@match e begin
     (key_ = value_) => @chain begin
@@ -113,6 +113,8 @@ end
 @test result[:d] == ["one 3 I", "two 3 II"]
 ```
 
+Thanks to DataFramesMeta.jl for the inspiration for this example.
+
 ### Example 2
 
 Here, define a custom way to combine several function calls into one more
@@ -128,13 +130,18 @@ Base.run(A::AbstractArray,
     mapreducedim(map_function, reduce_function, A,
                  along_call.arguments.positional[1] )
 
+```
+
+Test it out!
+
+```julia
 fancy = @chain begin
     [1, 2, 3, 4]
     reshape(_, 2, 2)
     collect_arguments(
         _,
         map,
-        @lambda( -(_, 1) ),
+        _ -> -(_, 1),
         @lazy_call( along(1) ),
         reduce,
         +)
