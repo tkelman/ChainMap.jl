@@ -14,15 +14,29 @@ file_in = joinpath("C:\\", "Users", "jsnot",
 function code_lines(file_in)
   text = readlines(file_in)
 
-  starts = map(_ -> ismatch(r"^```.+", chomp(_) ), text)
-  ends = map(_ -> chomp(_) == "```", text)
+  starts = @chain begin
+      text
+      @lambda map @chain begin
+          chomp(_)
+          ismatch(r"^```.+", _)
+      end
+  end
+
+  ends = @chain begin
+      text
+      @lambda map @chain begin
+          chomp(_)
+          _ == "```"
+      end
+   end
+
   Test.@test sum(starts) == sum(ends)
 
   @chain begin
       cumsum(starts) - cumsum(ends) .== 1
       text[_]
-      @unweave filter !startswith(~_, "```")
-      @unweave map replace(~_, r"\\", "")
+      @lambda filter !startswith(_, "```")
+      @lambda map replace(_, r"\\", "")
   end
 
 end
@@ -46,7 +60,7 @@ make_tests(path, head)
 function make_tests(path_in, head = "")
     head_cat = @chain begin
         head
-        @unweave map ~_ * "\n"
+        @lambda map _ * "\n"
         *(_...)
     end
 
@@ -54,9 +68,9 @@ function make_tests(path_in, head = "")
         path_in
         joinpath(_, "src")
         readdir(_)
-        @unweave map joinpath(path_in, "src", ~_)
+        @lambda map joinpath(path_in, "src", _)
         [_; joinpath(path_in, "README.md") ]
-        @unweave map code_lines(~_)
+        @lambda map code_lines(_)
         vcat(head_cat, _...)
         write(joinpath(path_in, "test", "runtests.jl"), _)
     end

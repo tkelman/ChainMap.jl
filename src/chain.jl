@@ -54,20 +54,3 @@ chain(e) =
 
 @nonstandard chain
 export @chain
-
-export lambda
-"""
-    @lambda(es...)
-
-Convert to an anonymous function with `_` as the input variable.
-
-# Examples
-```julia
-lambda_function = @lambda vcat(_, 2)
-@test lambda_function(1) == vcat(1, 2)
-```
-"""
-lambda(e) = Expr(:->, :_, e)
-
-@nonstandard lambda
-export @lambda

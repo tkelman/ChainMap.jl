@@ -16,6 +16,26 @@ end
 @test chain_block == @chain 1 vcat(_, 2)
 lambda_function = @lambda vcat(_, 2)
 @test lambda_function(1) == vcat(1, 2)
+f = :map
+e = :(vcat(_, 1))
+lambda(f, e)
+
+_ = [1, 2]
+@test [[1, 1], [2, 1]] == @lambda map vcat(_, 1)
+e = :(_ + 1)
+f = :(NullableArrays.map(lift = true))
+
+lambda(f, e)
+
+_ = NullableArrays.NullableArray([1, 2], [false, true])
+
+result = @lambda NullableArrays.broadcast(lift = true) _ + 1
+
+@test result.values[1] == 2
+@test result.isnull == [false, true]
+
+# `f` must be in the form `function_call_(arguments__)`
+@test_throws ErrorException lambda(:(import ChainMap), :(_ + 1) )
 merge_test = @chain begin
     collect_arguments(1, a = 2, b = 3)
     merge(_, collect_arguments(4, a = 5, c = 6) )
@@ -208,3 +228,67 @@ result = @unweave broadcast(lift = true) ~a + ~b
 # `f` must be in the form `function_call_(arguments__)`
 @test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
 @test bitnot(1) == ~1
+function transform(d; keyword_arguments...)
+    d_new = copy(d)
+    for (key, value) in keyword_arguments
+        d_new[key] = value
+    end
+    d_new
+end
+all_in_one(e) = @chain begin
+    e
+    chain(_)
+    with(_)
+    unweave(:broadcast, _)
+end
+transform_into(e) = MacroTools.@match e begin
+    (key_ = value_) => @chain begin
+        value
+        all_in_one(_)
+        Expr(:kw, key, _)
+    end
+end
+transform_with(d, keyword_arguments...) = @chain begin
+    keyword_arguments
+    map(transform_into, _)
+    Expr(:call, :transform, d, _...)
+end
+
+@nonstandard transform_with
+a = ["one", "two"]
+result = @chain begin
+    DataFrames.DataFrame(b = [1, 2], c = ["I", "II"])
+    @transform_with(_, d = begin
+        :b
+        sum(_)
+        string(_)
+        *(~a, " ", _, " ", ~:c)
+    end)
+end
+
+@test result[:d] == ["one 3 I", "two 3 II"]
+along() = "dummy function; could be a fancy view some day"
+
+Base.run(A::AbstractArray,
+         map_call::typeof(map), map_function::Function,
+         along_call::LazyCall{typeof(along)},
+         reduce_call::typeof(reduce), reduce_function::Function) =
+    mapreducedim(map_function, reduce_function, A,
+                 along_call.arguments.positional[1] )
+
+fancy = @chain begin
+    [1, 2, 3, 4]
+    reshape(_, 2, 2)
+    collect_arguments(
+        _,
+        map,
+        @lambda( -(_, 1) ),
+        @lazy_call( along(1) ),
+        reduce,
+        +)
+    run(_)
+end
+
+boring = mapreducedim(x -> x - 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
+
+@test fancy == boring
