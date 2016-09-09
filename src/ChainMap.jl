@@ -10,5 +10,6 @@ include("lambda.jl")
 include("LazyCall.jl")
 include("recursive.jl")
 include("unweave.jl")
+include("all.jl")
 
 end

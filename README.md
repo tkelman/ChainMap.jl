@@ -47,73 +47,31 @@ heavily to one-more-minute/Lazy.jl.
 [pkg-0.5_image]: http://pkg.julialang.org/badges/ChainMap_0.5.svg
 [pkg-0.5_url]: http://pkg.julialang.org/?pkg=ChainMap
 
-## Example 1
+## Example 1: `@chain_map`
 
-How fast can we build a non-standard evaluation transform function?
-
-A vanilla transform function.
-```julia
-function transform(d; keyword_arguments...)
-    d_new = copy(d)
-    for (key, value) in keyword_arguments
-        d_new[key] = value
-    end
-    d_new
-end
-```
-
-A function which combines three macros in `ChainMap`: `chain`, `with`, and
-`unweave`.
-```julia
-all_in_one(e) = @chain begin
-    e
-    chain(_)
-    with(_)
-    unweave(:broadcast, _)
-end
-```
-
-Run `all_in_one` on the values of a keyword argument.
-```julia
-transform_into(e) = MacroTools.@match e begin
-    (key_ = value_) => @chain begin
-        value
-        all_in_one(_)
-        Expr(:kw, key, _)
-    end
-end
-```
-
-`map` `transform_into` over `keyword_arguments`, then `transform`. Don't forget
-a non-standard evaluation version!
-```julia
-transform_with(d, keyword_arguments...) = @chain begin
-    keyword_arguments
-    map(transform_into, _)
-    Expr(:call, :transform, d, _...)
-end
-
-@nonstandard transform_with
-```
-
-Let's see if it works!
+The `@chain_map` macro combines three different macros: `@with` annotates each
+symbol with the chained associative: `_`. `@chain` chains together expressions
+wrapped in a `begin` block. `@unweave`, together with
+`NullableArrays.broadcast(lift = true)`, does broadcasting and automatic
+lifting.
 
 ```julia
-a = ["one", "two"]
+na = NullableArrays.NullableArray
+a = na(["one", "two"], [false, true])
 result = @chain begin
-    DataFrames.DataFrame(b = [1, 2], c = ["I", "II"])
-    @transform_with(_, d = begin
+    Dict(:b => na([1, 2]), :c => na(["I", "II"]))
+    @chain_map begin
         :b
-        sum(_)
-        string(_)
+        sum
+        get
+        string
         *(~a, " ", _, " ", ~:c)
-    end)
+    end
 end
 
-@test result[:d] == ["one 3 I", "two 3 II"]
+@test get(result[1]) == "one 3 I"
+@test result.isnull == [false, true]
 ```
-
-Thanks to DataFramesMeta.jl for the inspiration for this example.
 
 ### Example 2
 
@@ -129,7 +87,6 @@ Base.run(A::AbstractArray,
          reduce_call::typeof(reduce), reduce_function::Function) =
     mapreducedim(map_function, reduce_function, A,
                  along_call.arguments.positional[1] )
-
 ```
 
 Test it out!

@@ -17,7 +17,7 @@ Anything wrapped in `^`, such as `^(expr)`, gets passed through untouched.
 ### Examples
 ```julia
 a = 1
-_ = Dict(:a => 2)
+_ = DataFrames.DataFrame(a = 2)
 
 @test DataFrames.DataFrame(b = _[:a] + a, c = :d) ==
    @with DataFrames.DataFrame(b = :a + a, c = ^(:d))
@@ -125,7 +125,7 @@ e = Expr(:parameters, Expr(:..., :d) )
 ```
 """
 function add_key!(d, e, symbol = gensym() )
-    if @chain d haskey(_, e) !(_)
+    if @chain d haskey(_, e) !
         d[e] = replace_key(e, symbol)
     end
     unparameterize( d[e] )

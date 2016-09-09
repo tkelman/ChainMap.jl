@@ -24,16 +24,16 @@ the standard version.
 
 # Examples
 ```julia
-binaryfun(a, b, c) = :(\$b(\$a, \$c))
-chainback(a, b, c) = :(\$c(\$b, \$a))
+binaryfun(a, b, c) = Expr(:call, b, a, c)
+chainback(a, b, c) = Expr(:call, c, b, a)
 
 @nonstandard binaryfun chainback
 
 @test vcat(1, 2) == @binaryfun 1 vcat 2
 @test vcat(3, 2) == @chainback 2 3 vcat
 
-"See documentation of [`binaryfun`](@ref)" ==
-    @chain (@doc @binaryfun) string(_) chomp(_)
+@test "See documentation of [`binaryfun`](@ref)" ==
+    @chain (@doc @binaryfun) string chomp
 
 ```
 """

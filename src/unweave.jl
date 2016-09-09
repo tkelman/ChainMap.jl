@@ -50,13 +50,13 @@ function split_anonymous(e::Expr)
     d_reorder = @chain begin
         d
         DataStructures.OrderedDict(_)
-        parameters_to_front(_)
-        dots_to_back(_)
+        parameters_to_front
+        dots_to_back
     end
 
     anonymous_function = @chain begin
         d_reorder
-        values(_)
+        values
         Expr(:tuple, _...)
         Expr(:->, _, e_replace)
     end
@@ -65,6 +65,10 @@ function split_anonymous(e::Expr)
 end
 
 export unweave
+
+unweave(e) = e
+unweave(f, e) = e
+
 """
     @unweave e
 
@@ -76,11 +80,14 @@ and its arguments. No more than one splatted positional argument can be woven
 in. No more than one splatted keyword argument can be woven in provided there is
 a `;` visible both inside and outside the tilda. Make multi-line functions by
 wrapping in a begin block. To use `~` as a function, use the alias
-[`bitnot`](@ref).
+[`bitnot`](@ref). If there are no woven arguments in `e`, return `e`.
 
 # Examples
 
 ```julia
+@test 1 == @unweave 1
+@test 1 == @unweave +(1)
+
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
@@ -98,7 +105,7 @@ a = keyword_test(a = 1, b = 2)
 
 unweave_keyword_test = @chain begin
     @unweave keyword_test(c = 3; ~(a...))
-    run(_)
+    run
 end
 
 @test unweave_keyword_test == keyword_test(c = 3; a... )
@@ -110,8 +117,13 @@ end
 @test_throws ErrorException unweave(:( ~(;a...) + ~(;b...) ))
 ```
 """
-function unweave(e)
-    anonymous_function, arguments = split_anonymous(e::Expr)
+function unweave(e::Expr)
+    anonymous_function, arguments = split_anonymous(e)
+
+    if length(arguments) == 0
+        return(e)
+    end
+
     @chain begin
         arguments
         Expr(:call, :collect_arguments, _...)
@@ -124,9 +136,13 @@ end
 
 `unweave` `e` then run `f` on the component parts.
 
+If there are no woven arguments in `e`, return `e`.
 
 # Examples
 ```julia
+@test 1 == @unweave 1 1
+@test 1 == @unweave 1 +(1)
+
 e = :(vcat(~a, ~b) )
 f = :broadcast
 unweave(f, e)
@@ -138,22 +154,31 @@ b = [3, 4]
     @unweave broadcast vcat(~a, ~b)
 ```
 """
-function unweave(f, e)
+function unweave(f, e::Expr)
 
     anonymous_function, anonymous_arguments = split_anonymous(e)
+
+    if length(anonymous_arguments) == 0
+        return(e)
+    end
 
     Expr(:call, f, anonymous_function, anonymous_arguments...)
 
 end
 
 """
-    @unweave(f::Expr, e)
+    @unweave f::Expr e
 
 `unweave` `e` then insert the function as the first argument to `f` and
 the woven arguments at the end of the arguments of `f`.
 
+If there are no woven arguments in `e`, return `e`.
+
 # Examples
 ```julia
+@test 1 == @unweave +(1) 1
+@test 1 == @unweave +(1) +(1)
+
 e = :(~a + ~b)
 f = :(NullableArrays.broadcast(lift = true))
 
@@ -167,19 +192,23 @@ result = @unweave broadcast(lift = true) ~a + ~b
 @test result.values[1] == 4
 @test result.isnull == [false, true]
 
-# `f` must be in the form `function_call_(arguments__)`
+# `f` must be a call
 @test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
 ```
 """
-function unweave(f::Expr, e)
+function unweave(f::Expr, e::Expr)
 
     function_test = MacroTools.@capture f function_call_(arguments__)
 
     if !(function_test)
-        error("`f` must be in the form `function_call_(arguments__)`")
+        error("`f` must be a call")
     end
 
     anonymous_function, anonymous_arguments = split_anonymous(e)
+
+    if length(anonymous_arguments) == 0
+        return(e)
+    end
 
     Expr(:call, function_call, anonymous_function,
          arguments..., anonymous_arguments...)

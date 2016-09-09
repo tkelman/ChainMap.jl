@@ -67,7 +67,7 @@ merge_test = @chain begin
     unshift(_, vcat)
     LazyCall(_, map)
     merge(_, collect_arguments([3, 4]) )
-    run(_)
+    run
 end
 
 @test merge_test == [[1, 3], [2, 4]]
@@ -103,7 +103,7 @@ end
 push(a::Arguments, positional...; keyword...) =
   @chain begin
       keyword
-      Dict(_)
+      Dict
       Arguments(positional, _)
       merge(a, _)
   end
@@ -120,7 +120,7 @@ push_test = @chain begin
     unshift(_, vcat)
     LazyCall(_, map)
     push(_, [3, 4])
-    run(_)
+    run
 end
 
 @test push_test == [[1, 3], [2, 4]]
@@ -168,7 +168,7 @@ unshift_test = @chain begin
     collect_arguments([1, 2], [3, 4])
     LazyCall(_, map)
     unshift(_, vcat)
-    run(_)
+    run
 end
 
 @test unshift_test == [[1, 3], [2, 4]]
@@ -195,7 +195,7 @@ a = collect_arguments(1, 2, a = 3, b = 4)
 """
 collect_arguments(positional...; keyword...) = @chain begin
     keyword
-    Dict(_)
+    Dict
     Arguments(positional, _)
 end
 
@@ -214,7 +214,7 @@ l = collect_call(vcat, [1, 2], [3, 4])
 """
 collect_call(f, positional...; keyword...) = @chain begin
     keyword
-    Dict(_)
+    Dict
     Arguments(positional, _)
     LazyCall(_, f)
 end
@@ -239,7 +239,7 @@ run_test = @chain begin
     collect_arguments([1, 2], [3, 4])
     unshift(_, vcat)
     collect_arguments(_, map)
-    run(_)
+    run
 end
 
 @test run_test == map(vcat, [1, 2], [3, 4])
@@ -258,7 +258,7 @@ run_test = @chain begin
     collect_arguments([1, 2], [3, 4])
     unshift(_, vcat)
     LazyCall(_, map)
-    run(_)
+    run
 end
 
 @test run_test == map(vcat, [1, 2], [3, 4])

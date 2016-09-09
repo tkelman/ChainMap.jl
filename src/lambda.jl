@@ -29,7 +29,7 @@ _ = [1, 2]
 """
 lambda(f, e, v = :_) = @chain begin
     e
-    lambda(_)
+    lambda
     Expr(:call, f, _, v)
 end
 
@@ -52,25 +52,18 @@ result = @lambda NullableArrays.broadcast(lift = true) _ + 1
 @test result.values[1] == 2
 @test result.isnull == [false, true]
 
-# `f` must be in the form `function_call_(arguments__)`
+# `f` must be a call
 @test_throws ErrorException lambda(:(import ChainMap), :(_ + 1) )
 ```
 """
-function lambda(f::Expr, e, v = :_)
-
-    function_test = MacroTools.@capture f function_call_(arguments__)
-
-    if !(function_test)
-        error("`f` must be in the form `function_call_(arguments__)`")
-    end
-
-    @chain begin
+lambda(f::Expr, e, v = :_) = MacroTools.@match f begin
+    function_call_(arguments__) => @chain begin
         e
-        lambda(_)
+        lambda
         Expr(:call, function_call, _, v, arguments...)
     end
+    f_=> error("`f` must be a call")
 end
-
 
 @nonstandard lambda
 export @lambda

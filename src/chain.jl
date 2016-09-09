@@ -1,6 +1,19 @@
 export chain
+
 """
     @chain head tail
+
+Calls `head` on `tail`
+
+# Examples
+```julia
+@test vcat(1) == @chain 1 vcat
+```
+"""
+chain(head, tail) = Expr(:call, tail, head)
+
+"""
+    @chain head tail::Expr
 
 Reinterprets `\_` in `tail` as `head`.
 
@@ -9,7 +22,7 @@ Reinterprets `\_` in `tail` as `head`.
 @test vcat(2, 1) == @chain 1 vcat(2, _)
 ```
 """
-chain(head, tail) = Expr(:let, tail, Expr(:(=), :_, head))
+chain(head, tail::Expr) = Expr(:let, tail, Expr(:(=), :_, head))
 
 chain(head, tail::AnnotatedLine) =
     AnnotatedLine(tail.line, chain(convert(Expr, head), tail.expr) )
