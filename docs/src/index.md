@@ -5,4 +5,5 @@
 
 ```@autodocs
 Modules = [ChainMap]
+Private = false
 ```
