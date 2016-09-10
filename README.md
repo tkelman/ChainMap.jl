@@ -49,7 +49,7 @@ heavily to one-more-minute/Lazy.jl.
 
 ## Example 1: `@chain_map`
 
-The `@chain_map` macro combines three different macros: `@with` annotates each
+The `@chain_map` macro combines three different macros. `@with` annotates each
 symbol with the chained associative: `_`. `@chain` chains together expressions
 wrapped in a `begin` block. `@unweave`, together with
 `NullableArrays.broadcast(lift = true)`, does broadcasting and automatic

@@ -1,9 +1,12 @@
 export chain_map
 """
-    chain_map(e)
+    chain_map(e, v = :\_)
 
-A function which combines three macros in `ChainMap`: [`chain`](@ref), `with`,
-and [`unweave`](@ref) with `NullableArrays.broadcast(lift = true)`.
+The `@chain_map` macro combines three different macros. [`with`](@ref) annotates
+each symbol with the associative: `v`. [`chain`](@ref) chains together
+expressions wrapped in a `begin` block. [`@unweave`](@ref), together with
+`NullableArrays.broadcast(lift = true)`, does broadcasting and automatic
+lifting of woven expressions.
 
 # Examples
 ```julia
@@ -24,10 +27,10 @@ end
 @test result.isnull == [false, true]
 ```
 """
-chain_map(e) = @chain begin
+chain_map(e, v = :_) = @chain begin
     e
     chain
-    with
+    with(_, :_)
     unweave(:(NullableArrays.broadcast(lift = true)), _)
 end
 
