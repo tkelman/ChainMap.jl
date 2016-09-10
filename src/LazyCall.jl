@@ -5,8 +5,9 @@ export Arguments
         keyword::Dict{Symbol, Any}
     end
 
-Will store positional and keyword arguments for later use. Create
-with [`collect_arguments`](@ref). You can also [`merge`](@ref) two
+Will store positional and keyword arguments for later use.
+
+Create with [`collect_arguments`](@ref). You can also [`merge`](@ref) two
 `Arguments`, [`push`](@ref) or [`unshift`](@ref) in new
 arguments, and run with [`run`](@ref).
 """
@@ -160,7 +161,7 @@ end
 """
     unshift(lazy_call::LazyCall, positional...)
 
-`unshift` to the `arguments` of `lazy_call`.
+`unshift` to the [`Arguments`](@ref) of a [`lazy_call`](@ref).
 
 # Examples
 ```julia

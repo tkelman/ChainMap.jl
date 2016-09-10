@@ -2,7 +2,7 @@ export lambda
 """
     @lambda e
 
-Convert to an anonymous function with `_` as the input variable.
+Convert `e` to an anonymous function with `_` as the input variable.
 
 # Examples
 ```julia
@@ -36,7 +36,10 @@ end
 """
     @unweave(f::Expr, e, v = :\_)
 
-`lambda` `e` then insert `e` and `v` as the first two arguments to `f`.
+`lambda` `e` then insert `e` as as the first and `v` as the last argument to
+`f`.
+
+`f` must be a call.
 
 # Examples
 ```julia
@@ -60,7 +63,7 @@ lambda(f::Expr, e, v = :_) = MacroTools.@match f begin
     function_call_(arguments__) => @chain begin
         e
         lambda
-        Expr(:call, function_call, _, v, arguments...)
+        Expr(:call, function_call, _, arguments..., v)
     end
     f_=> error("`f` must be a call")
 end

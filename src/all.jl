@@ -2,8 +2,8 @@ export chain_map
 """
     chain_map(e)
 
-A function which combines three macros in `ChainMap`: [`chain`](@ref), `with`, and
-[`unweave`](@ref) into `NullableArrays.broadcast` with automatic lifting.
+A function which combines three macros in `ChainMap`: [`chain`](@ref), `with`,
+and [`unweave`](@ref) with `NullableArrays.broadcast(lift = true)`.
 
 # Examples
 ```julia
