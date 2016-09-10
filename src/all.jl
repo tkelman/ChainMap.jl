@@ -30,7 +30,7 @@ end
 chain_map(e, v = :_) = @chain begin
     e
     chain
-    with(_, :_)
+    with(_, v)
     unweave(:(NullableArrays.broadcast(lift = true)), _)
 end
 
