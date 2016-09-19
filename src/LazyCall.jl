@@ -84,8 +84,7 @@ export push
 """
     push(arguments::Arguments, positional...; keyword...)
 
-Add positional and keyword arguments to an already existing
-[`Arguments`](@ref) type.
+Add positional and keyword arguments to `arguments`.
 
 Positional arguments are added at the end, and new keyword arguments
 are added to old keyword arguments, or, if the keys match, overwrite
@@ -112,7 +111,7 @@ push(a::Arguments, positional...; keyword...) =
 """
     push(lazy_call::LazyCall, positional...; keyword...)
 
-`push` to the `arguments` of `lazy_call`.
+`push` to `lazy_call.arguments`.
 
 # Examples
 ```julia
@@ -137,8 +136,7 @@ export unshift
 """
     unshift(arguments::Arguments, positional...)
 
-Add positional arguments to an already existing [`Arguments`](@ref)
-type.
+Add positional arguments to `arguments`.
 
 New arguments are added at the start.
 
@@ -161,7 +159,7 @@ end
 """
     unshift(lazy_call::LazyCall, positional...)
 
-`unshift` to the [`Arguments`](@ref) of a [`lazy_call`](@ref).
+`unshift` to `lazy_call.arguments`.
 
 # Examples
 ```julia
@@ -320,7 +318,7 @@ Will break apart a function call into a [`LazyCall`](@ref) object.
 test_function(arguments...; keyword_arguments...) =
     (arguments, keyword_arguments)
 
-@test ( @lazy_call test_function(1, 2, a= 3) ) ==
+@test ( @lazy_call test_function(1, 2, a = 3) ) ==
     collect_call(test_function, 1, 2, a = 3)
 ```
 """

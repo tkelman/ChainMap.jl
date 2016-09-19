@@ -1,10 +1,10 @@
 export chain_map
 """
-    chain_map(e, v = :\_)
+    @chain_map(e, v = \_)
 
 The `@chain_map` macro combines three different macros. [`with`](@ref) annotates
 each symbol with the associative: `v`. [`chain`](@ref) chains together
-expressions wrapped in a `begin` block. [`@unweave`](@ref), together with
+expressions wrapped in a `begin` block. [`unweave`](@ref), together with
 `NullableArrays.broadcast(lift = true)`, does broadcasting and automatic
 lifting of woven expressions.
 

@@ -134,7 +134,7 @@ end
 """
     @unweave f e
 
-`unweave` `e` then run `f` on the component parts.
+[`unweave`](@ref) `e` then run `f` on the component parts.
 
 If there are no woven arguments in `e`, return `e`.
 
@@ -169,7 +169,7 @@ end
 """
     @unweave f::Expr e
 
-`unweave` `e` then insert the function as the first argument to `f` and
+[`unweave`](@ref) `e` then insert the function as the first argument to `f` and
 the woven arguments at the end of the arguments of `f`.
 
 If there are no woven arguments in `e`, return `e`.

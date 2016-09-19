@@ -73,7 +73,7 @@ end
 @test result.isnull == [false, true]
 ```
 
-### Example 2
+## Example 2: Collecting arguments
 
 Here, define a custom way to combine several function calls into one more
 efficient one.

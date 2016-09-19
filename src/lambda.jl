@@ -15,7 +15,7 @@ lambda(e) = Expr(:->, :_, e)
 """
     @lambda(f, e, v = :\_)
 
-`lambda` `e` then call `f` on `e` and `v`.
+[`lambda`](@ref) `e` then call `f` on `e` and `v`.
 
 # Examples
 ```julia
@@ -36,8 +36,8 @@ end
 """
     @unweave(f::Expr, e, v = :\_)
 
-`lambda` `e` then insert `e` as as the first and `v` as the last argument to
-`f`.
+[`lambda`](@ref) `e` then insert `e` as as the first and `v` as the last
+argument to `f`.
 
 `f` must be a call.
 
