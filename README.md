@@ -1,7 +1,8 @@
 # ChainMap.jl
 
 This package attempts to integrate mapping and chaining. The chaining code owes
-heavily to one-more-minute/Lazy.jl.
+heavily to MikeInnes/Lazy.jl, while the with code owes heavily to
+JuliaStats/DataFramesMeta.jl.
 
 ## Badges
 
