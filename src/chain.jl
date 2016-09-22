@@ -1,32 +1,3 @@
-"""
-```julia
-    @test ChainMap.replace_(1, 3) == 1
-```
-"""
-replace_(e, head) = e
-
-"""
-```julia
-    @test ChainMap.replace_(:_, 3) == 3
-    @test ChainMap.replace_(:a, 3) == :a
-```
-"""
-replace_(e::Symbol, head) =
-    if e == :_
-        head
-    else
-        e
-    end
-
-"""
-```julia
-    @test ChainMap.replace_(:(2 + _ + (1 + _)), 3) ==
-        :(2 + 3 + (1 + 3))
-```
-"""
-replace_(e::Expr, head) =
-    Expr(e.head, map(e -> replace_(e, head), e.args)...)
-
 export chain
 
 """
@@ -51,7 +22,10 @@ Reinterprets `\_` in `tail` as `head`.
 @test vcat(2, 1) == @chain 1 vcat(2, _)
 ```
 """
-chain(head, tail::Expr) = replace_(tail, head)
+chain(head, tail::Expr) = Expr(:let, tail, Expr(:(=), :_, head))
+
+chain(head, tail::AnnotatedLine) =
+    AnnotatedLine(tail.line, chain(convert(Expr, head), tail.expr) )
 
 """
     @chain es...
@@ -86,7 +60,7 @@ end
 """
 chain(e) =
     if MacroTools.isexpr(e, :block)
-        chain(MacroTools.rmlines(e).args...)
+        convert(Expr, chain(annotate(e.args)...) )
     else
         e
     end
