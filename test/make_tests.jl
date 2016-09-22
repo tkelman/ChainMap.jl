@@ -16,7 +16,7 @@ function code_lines(file_in)
 
   starts = @chain begin
       text
-      @lambda map @chain begin
+      @map @chain begin
           chomp(_)
           ismatch(r"^```.+", _)
       end
@@ -24,7 +24,7 @@ function code_lines(file_in)
 
   ends = @chain begin
       text
-      @lambda map @chain begin
+      @map @chain begin
           chomp(_)
           _ == "```"
       end
@@ -36,7 +36,7 @@ function code_lines(file_in)
       cumsum(starts) - cumsum(ends) .== 1
       text[_]
       @lambda filter !startswith(_, "```")
-      @lambda map replace(_, r"\\", "")
+      @map replace(_, r"\\", "")
   end
 
 end
@@ -60,7 +60,7 @@ make_tests(path, head)
 function make_tests(path_in, head = "")
     head_cat = @chain begin
         head
-        @lambda map _ * "\n"
+        @map _ * "\n"
         *(_...)
     end
 
@@ -68,9 +68,9 @@ function make_tests(path_in, head = "")
         path_in
         joinpath(_, "src")
         readdir(_)
-        @lambda map joinpath(path_in, "src", _)
+        @map joinpath(path_in, "src", _)
         [_; joinpath(path_in, "README.md") ]
-        @lambda map code_lines(_)
+        @map code_lines(_)
         vcat(head_cat, _...)
         write(joinpath(path_in, "test", "runtests.jl"), _)
     end

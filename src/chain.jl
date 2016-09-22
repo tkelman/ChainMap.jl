@@ -15,7 +15,8 @@ chain(head, tail) = Expr(:call, tail, head)
 """
     @chain head tail::Expr
 
-Reinterprets `\_` in `tail` as `head`.
+Reinterprets `\_` in `tail` as `head`. Note that dot vectorization is broken by
+this macro. Instead, use [`unweave`](@ref), [`@map`](@ref), or [`@broadcast`](@ref)
 
 # Examples
 ```julia

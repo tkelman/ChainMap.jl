@@ -218,6 +218,26 @@ end
 @nonstandard unweave
 export @unweave
 
+"""
+    @broadcast e
+
+A convenience macro for [`unweave`](@ref)` where `f` = `broadcast`
+
+# Examples
+
+```julia
+a = [1, 2]
+b = [3, 4]
+
+@test broadcast((a, b) -> vcat(a, b), a, b) ==
+    @broadcast vcat(~a, ~b)
+```
+"""
+macro broadcast(e)
+    esc(unweave(:map, e))
+end
+export @broadcast
+
 export bitnot
 """
     bitnot

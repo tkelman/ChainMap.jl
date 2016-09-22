@@ -24,7 +24,7 @@ e = :(vcat(_, 1))
 lambda(f, e)
 
 _ = [1, 2]
-@test [[1, 1], [2, 1]] == @lambda map vcat(_, 1)
+@test map(_ -> vcat(_, 1), _) == @lambda map vcat(_, 1)
 ```
 """
 lambda(f, e, v = :_) = @chain begin
@@ -34,7 +34,7 @@ lambda(f, e, v = :_) = @chain begin
 end
 
 """
-    @unweave(f::Expr, e, v = :\_)
+    @lambda(f::Expr, e, v = \_)
 
 [`lambda`](@ref) `e` then insert `e` as as the first and `v` as the last
 argument to `f`.
@@ -70,3 +70,19 @@ end
 
 @nonstandard lambda
 export @lambda
+
+"""
+    @map(e, v = \_)
+
+A convenience macro for [`lambda`](@ref) where `f` = `map`
+
+# Examples
+```julia
+_ = [1, 2]
+@test map(_ -> vcat(_, 1), _) == @map vcat(_, 1)
+```
+"""
+macro map(e, v = :_)
+    esc(lambda(:map, e, v))
+end
+export @map

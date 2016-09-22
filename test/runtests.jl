@@ -37,7 +37,7 @@ e = :(vcat(_, 1))
 lambda(f, e)
 
 _ = [1, 2]
-@test [[1, 1], [2, 1]] == @lambda map vcat(_, 1)
+@test map(_ -> vcat(_, 1), _) == @lambda map vcat(_, 1)
 e = :(_ + 1)
 f = :(NullableArrays.map(lift = true))
 
@@ -52,6 +52,8 @@ result = @lambda NullableArrays.broadcast(lift = true) _ + 1
 
 # `f` must be a call
 @test_throws ErrorException lambda(:(import ChainMap), :(_ + 1) )
+_ = [1, 2]
+@test map(_ -> vcat(_, 1), _) == @map vcat(_, 1)
 merge_test = @chain begin
     collect_arguments(1, a = 2, b = 3)
     merge(_, collect_arguments(4, a = 5, c = 6) )
@@ -135,7 +137,7 @@ end
 test_function(arguments...; keyword_arguments...) =
     (arguments, keyword_arguments)
 
-@test ( @lazy_call test_function(1, 2, a= 3) ) ==
+@test ( @lazy_call test_function(1, 2, a = 3) ) ==
     collect_call(test_function, 1, 2, a = 3)
 binaryfun(a, b, c) = Expr(:call, b, a, c)
 chainback(a, b, c) = Expr(:call, c, b, a)
@@ -252,6 +254,11 @@ result = @unweave broadcast(lift = true) ~a + ~b
 
 # `f` must be a call
 @test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
+a = [1, 2]
+b = [3, 4]
+
+@test broadcast((a, b) -> vcat(a, b), a, b) ==
+    @broadcast vcat(~a, ~b)
 @test bitnot(1) == ~1
 na = NullableArrays.NullableArray
 a = na(["one", "two"], [false, true])
