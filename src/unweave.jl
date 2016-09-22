@@ -234,7 +234,7 @@ b = [3, 4]
 ```
 """
 macro broadcast(e)
-    esc(unweave(:map, e))
+    esc(unweave(:broadcast, e))
 end
 export @broadcast
 
