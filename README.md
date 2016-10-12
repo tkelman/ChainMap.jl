@@ -10,6 +10,8 @@ JuliaStats/DataFramesMeta.jl.
 
 [![][docs-stable_image]][docs-stable_url] [![][docs-latest_image]][docs-latest_url]
 
+Note that the stable docs are out of date for reasons I haven't figured out yet. The latest docs are up to date with the last release.
+
 ### Build Status
 
 [![][travis_image]][travis_url] [![][appveyor_image]][appveyor_url]
