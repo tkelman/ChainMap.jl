@@ -1,6 +1,18 @@
 export chain
 
 """
+    @chain
+
+Error: you must chain at least one object
+
+# Examples
+```julia
+@test_throws ErrorException ChainMap.chain()
+```
+"""
+chain() = error("You must chain at least one object")
+
+"""
     @chain head tail
 
 Calls `head` on `tail`
