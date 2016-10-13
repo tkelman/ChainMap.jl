@@ -1,12 +1,18 @@
 export chain_map
 """
-    @chain_map(e, v = \_)
+    @chain_map(e, associative = \_)
 
 The `@chain_map` macro combines three different macros. [`with`](@ref) annotates
+<<<<<<< HEAD
 each symbol with the associative: `v`. [`chain`](@ref) chains together
 expressions wrapped in a `begin` block. [`unweave`](@ref), together with
 `NullableArrays.broadcast(lift = true)`, does broadcasting and automatic
 lifting of woven expressions.
+=======
+each symbol with `associative`. [`chain`](@ref) chains together
+expressions wrapped in a `begin` block. [`@broadcast`](@ref) does broadcasting
+of woven expressions.
+>>>>>>> 13bff6a... misc
 
 # Examples
 ```julia
@@ -27,11 +33,16 @@ end
 @test result.isnull == [false, true]
 ```
 """
-chain_map(e, v = :_) = @chain begin
+chain_map(e, associative = :_) = @chain begin
     e
     chain
+<<<<<<< HEAD
     with(_, v)
     unweave(:(NullableArrays.broadcast(lift = true)), _)
+=======
+    with(_, associative)
+    unweave(:broadcast, _)
+>>>>>>> 13bff6a... misc
 end
 
 @nonstandard chain_map
