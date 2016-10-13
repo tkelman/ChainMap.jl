@@ -48,21 +48,24 @@ first and `input` as the last argument to `outer_function`.
 # Examples
 ```julia
 <<<<<<< HEAD
+<<<<<<< HEAD
 e = :(_ + 1)
 f = :(NullableArrays.map(lift = true))
 =======
 anonymous_function = :(_ + 1)
 outer_function = :( mapreduce(*) )
 >>>>>>> 13bff6a... misc
+=======
+anonymous_function = :(_ + 1)
+outer_function = :( mapreduce(*) )
+>>>>>>> halp
 
 lambda(outer_function, anonymous_function)
 
-_ = NullableArrays.NullableArray([1, 2], [false, true])
+_ = [1, 2]
 
-result = @lambda NullableArrays.broadcast(lift = true) _ + 1
-
-@test result.values[1] == 2
-@test result.isnull == [false, true]
+@test mapreduce(x -> x + 1, *, [1, 2]) ==
+  @lambda mapreduce(*) _ + 1
 
 # `f` must be a call
 @test_throws ErrorException lambda(:(import ChainMap), :(_ + 1) )

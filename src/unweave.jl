@@ -171,6 +171,7 @@ If there are no woven arguments in `e`, return `e`.
 # Examples
 ```julia
 <<<<<<< HEAD
+<<<<<<< HEAD
 @test 1 == @unweave +(1) 1
 @test 1 == @unweave +(1) +(1)
 
@@ -187,12 +188,24 @@ broadcast_tuple(args...; as_tuple = false) =
 e = :( vcat(~a, ~b) )
 f = :(broadcast_tuple(as_tuple = true) )
 >>>>>>> 13bff6a... misc
+=======
+broadcast_tuple(args...; as_tuple = false) =
+    if as_tuple
+        (broadcast(args...)...)
+    else
+        broadcast(args...)
+    end
+
+e = :( vcat(~a, ~b) )
+f = :(broadcast_tuple(as_tuple = true) )
+>>>>>>> halp
 
 unweave(f, e)
 
-a = NullableArrays.NullableArray([1, 2])
-b = NullableArrays.NullableArray([3, 4], [false, true])
+a = [1, 2]
+b = [3, 4]
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 result = @unweave broadcast(lift = true) ~a + ~b
 
@@ -204,6 +217,12 @@ result = @unweave broadcast_tuple(as_tuple = true) ~a + ~b
 @test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
     @unweave broadcast_tuple(as_tuple = true) vcat(~a, ~b)
 >>>>>>> 13bff6a... misc
+=======
+result = @unweave broadcast_tuple(as_tuple = true) ~a + ~b
+
+@test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
+    @unweave broadcast_tuple(as_tuple = true) vcat(~a, ~b)
+>>>>>>> halp
 
 # `f` must be a call
 @test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
