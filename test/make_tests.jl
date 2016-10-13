@@ -52,7 +52,7 @@ An optional header string, or vector of header strings, `head`, can be added.
 # Examples
 ```julia
 path_in = "C:\\Users\\jsnot\\.julia\\v0.4\\ChainMap"
-head = ["using ChainMap", "import DataStructures", "import NullableArrays",
+head = ["using ChainMap", "import DataStructures",
         "import DataFrames", "using Base.Test"]
 make_tests(path, head)
 ```
@@ -77,6 +77,6 @@ function make_tests(path_in, head = "")
 end
 
 path = "C:\\Users\\jsnot\\.julia\\v0.4\\ChainMap"
-head = ["using ChainMap", "import DataStructures", "import NullableArrays",
+head = ["using ChainMap", "import DataStructures",
         "import DataFrames", "using Base.Test"]
 make_tests(path, head)

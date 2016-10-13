@@ -1,7 +1,6 @@
 module ChainMap
 import MacroTools
 import DataStructures
-import NullableArrays
 
 include("nonstandard.jl")
 include("annotate.jl")

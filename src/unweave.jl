@@ -176,21 +176,29 @@ If there are no woven arguments in `e`, return `e`.
 
 # Examples
 ```julia
+
 @test 1 == @unweave +(1) 1
 @test 1 == @unweave +(1) +(1)
 
-e = :(~a + ~b)
-f = :(NullableArrays.broadcast(lift = true))
+broadcast_tuple(args...; as_tuple = false) =
+    if as_tuple
+        (broadcast(args...)...)
+    else
+        broadcast(args...)
+    end
+
+e = :( vcat(~a, ~b) )
+f = :(broadcast_tuple(as_tuple = true)
 
 unweave(f, e)
 
-a = NullableArrays.NullableArray([1, 2])
-b = NullableArrays.NullableArray([3, 4], [false, true])
+a = [1, 2]
+b = [3, 4]
 
-result = @unweave broadcast(lift = true) ~a + ~b
+result = @unweave broadcast_tuple(lift = true) ~a + ~b
 
-@test result.values[1] == 4
-@test result.isnull == [false, true]
+@test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
+    @unweave broadcast_tuple(lift = true) vcat(~a, ~b)
 
 # `f` must be a call
 @test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
