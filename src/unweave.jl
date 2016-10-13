@@ -152,10 +152,6 @@ function unweave(f::Symbol, e::Expr)
 
     anonymous_function, anonymous_arguments = split_anonymous(e)
 
-    if length(anonymous_arguments) == 0
-        return(e)
-    end
-
     Expr(:call, f, anonymous_function, anonymous_arguments...)
 
 end
@@ -203,10 +199,6 @@ function unweave(f::Expr, e::Expr)
     end
 
     anonymous_function, anonymous_arguments = split_anonymous(e)
-
-    if length(anonymous_arguments) == 0
-        return(e)
-    end
 
     Expr(:call, function_call, anonymous_function,
          arguments..., anonymous_arguments...)
