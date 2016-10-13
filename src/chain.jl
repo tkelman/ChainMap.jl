@@ -47,6 +47,7 @@ chain_line(es...) = foldl(link, es)
 @nonstandard chain_line
 export @chain_line
 
+export chain
 """
     @chain e::Expr
 
