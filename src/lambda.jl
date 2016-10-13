@@ -47,18 +47,8 @@ first and `input` as the last argument to `outer_function`.
 
 # Examples
 ```julia
-<<<<<<< HEAD
-<<<<<<< HEAD
-e = :(_ + 1)
-f = :(NullableArrays.map(lift = true))
-=======
 anonymous_function = :(_ + 1)
 outer_function = :( mapreduce(*) )
->>>>>>> 13bff6a... misc
-=======
-anonymous_function = :(_ + 1)
-outer_function = :( mapreduce(*) )
->>>>>>> halp
 
 lambda(outer_function, anonymous_function)
 

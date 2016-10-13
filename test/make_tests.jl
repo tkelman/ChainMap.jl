@@ -76,17 +76,4 @@ function make_tests(package)
     end
 end
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-path = "C:\\Users\\jsnot\\.julia\\v0.4\\ChainMap"
-head = ["using ChainMap", "import DataStructures", "import NullableArrays",
-        "import DataFrames", "using Base.Test"]
-make_tests(path, head)
-=======
-
 make_tests("ChainMap")
->>>>>>> 13bff6a... misc
-=======
-
-make_tests("ChainMap")
->>>>>>> halp
