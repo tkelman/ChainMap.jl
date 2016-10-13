@@ -53,27 +53,24 @@ Note that the stable docs are out of date for reasons I haven't figured out yet.
 ## Example 1: `@chain_map`
 
 The `@chain_map` macro combines three different macros. `@with` annotates each
-symbol with the chained associative: `_`. `@chain` chains together expressions
+symbol with the chained associative. `@chain` chains together expressions
 wrapped in a `begin` block. `@unweave`, together with
 `NullableArrays.broadcast(lift = true)`, does broadcasting and automatic
 lifting.
 
 ```julia
-na = NullableArrays.NullableArray
-a = na(["one", "two"], [false, true])
+a = ["one", "two"]
 result = @chain begin
-    Dict(:b => na([1, 2]), :c => na(["I", "II"]))
+    Dict(:b => [1, 2], :c => ["I", "II"])
     @chain_map begin
         :b
         sum
-        get
         string
         *(~a, " ", _, " ", ~:c)
     end
 end
 
-@test get(result[1]) == "one 3 I"
-@test result.isnull == [false, true]
+@test result == ["one 3 I", "two 3 II"]
 ```
 
 ## Example 2: Collecting arguments

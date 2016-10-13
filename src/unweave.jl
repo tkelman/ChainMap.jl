@@ -47,6 +47,10 @@ function split_anonymous(e::Expr)
     d = Dict()
     e_replace = replace_record!(e, d)
 
+    if length(d) == 0
+        error("Must include at least one woven argument")
+    end
+
     d_reorder = @chain begin
         d
         DataStructures.OrderedDict(_)
@@ -66,11 +70,9 @@ end
 
 export unweave
 
-unweave(e) = e
-unweave(f, e) = e
 
 """
-    @unweave e
+    @unweave e::Expr
 
 Interprets `e` as a function with its positional arguments wrapped in tildas and
 interwoven into it.
@@ -85,9 +87,6 @@ wrapping in a begin block. To use `~` as a function, use the alias
 # Examples
 
 ```julia
-@test 1 == @unweave 1
-@test 1 == @unweave +(1)
-
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
@@ -110,6 +109,9 @@ end
 
 @test unweave_keyword_test == keyword_test(c = 3; a... )
 
+# Must include at least one woven argument
+@test_throws ErrorException unweave(:(a + b))
+
 # Can splat no more than one positional argument
 @test_throws ErrorException unweave(:( ~(a...) + ~(b...) ))
 
@@ -120,10 +122,6 @@ end
 function unweave(e::Expr)
     anonymous_function, arguments = split_anonymous(e)
 
-    if length(arguments) == 0
-        return(e)
-    end
-
     @chain begin
         arguments
         Expr(:call, :collect_arguments, _...)
@@ -132,17 +130,13 @@ function unweave(e::Expr)
 end
 
 """
-    @unweave f e
+    @unweave f::Symbol e::Expr
 
-[`unweave`](@ref) `e` then run `f` on the component parts.
-
-If there are no woven arguments in `e`, return `e`.
+[`unweave`](@ref) `e` then run `f` on the component parts, anonymous function
+first.
 
 # Examples
 ```julia
-@test 1 == @unweave 1 1
-@test 1 == @unweave 1 +(1)
-
 e = :(vcat(~a, ~b) )
 f = :broadcast
 unweave(f, e)
@@ -154,7 +148,7 @@ b = [3, 4]
     @unweave broadcast vcat(~a, ~b)
 ```
 """
-function unweave(f, e::Expr)
+function unweave(f::Symbol, e::Expr)
 
     anonymous_function, anonymous_arguments = split_anonymous(e)
 
@@ -167,7 +161,7 @@ function unweave(f, e::Expr)
 end
 
 """
-    @unweave f::Expr e
+    @unweave f::Expr e::Expr
 
 [`unweave`](@ref) `e` then insert the function as the first argument to `f` and
 the woven arguments at the end of the arguments of `f`.
@@ -176,10 +170,6 @@ If there are no woven arguments in `e`, return `e`.
 
 # Examples
 ```julia
-
-@test 1 == @unweave +(1) 1
-@test 1 == @unweave +(1) +(1)
-
 broadcast_tuple(args...; as_tuple = false) =
     if as_tuple
         (broadcast(args...)...)
@@ -188,17 +178,17 @@ broadcast_tuple(args...; as_tuple = false) =
     end
 
 e = :( vcat(~a, ~b) )
-f = :(broadcast_tuple(as_tuple = true)
+f = :(broadcast_tuple(as_tuple = true) )
 
 unweave(f, e)
 
 a = [1, 2]
 b = [3, 4]
 
-result = @unweave broadcast_tuple(lift = true) ~a + ~b
+result = @unweave broadcast_tuple(as_tuple = true) ~a + ~b
 
 @test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
-    @unweave broadcast_tuple(lift = true) vcat(~a, ~b)
+    @unweave broadcast_tuple(as_tuple = true) vcat(~a, ~b)
 
 # `f` must be a call
 @test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
@@ -227,7 +217,7 @@ end
 export @unweave
 
 """
-    @broadcast e
+    @broadcast e::Expr
 
 A convenience macro for [`unweave`](@ref)` where `f` = `broadcast`
 
@@ -241,9 +231,10 @@ b = [3, 4]
     @broadcast vcat(~a, ~b)
 ```
 """
-macro broadcast(e)
+macro broadcast(e::Expr)
     esc(unweave(:broadcast, e))
 end
+
 export @broadcast
 
 export bitnot

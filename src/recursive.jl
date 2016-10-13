@@ -8,26 +8,27 @@ map_expression(e::Expr, f) = Expr(f(e.head), map(f, e.args)...)
 
 export with
 """
-    @with(e, df = \_)
+    @with(e, associative = \_)
 
-Extract any symbols `e`, such as `:colA`, from `df`, e.g. `df[:colA]`.
+Extract any symbols in `e`, such as `:a`, from `associative`, e.g.
+`associative[:a]`.
 
-Anything wrapped in `^`, such as `^(expr)`, gets passed through untouched.
+Anything wrapped in `^`, such as `^(escaped)`, gets passed through untouched.
 
 ### Examples
 ```julia
 a = 1
-_ = DataFrames.DataFrame(a = 2)
+_ = Dict(:a => 2)
 
-@test DataFrames.DataFrame(b = _[:a] + a, c = :d) ==
-   @with DataFrames.DataFrame(b = :a + a, c = ^(:d))
+@test Dict("a" => _[:a] + a, "b" => :b) ==
+   @with Dict("a" => :a + a, "b" => ^(:b))
 ```
 """
-with(e, df = :_) = MacroTools.@match e begin
+with(e, associative = :_) = MacroTools.@match e begin
     ^(e_) => e
-    :(e_) => Expr(:ref, df, Meta.quot(e) )
-    a_.b_ => Expr(:., a, Meta.quot(b) )
-    e_ => map_expression(e, e -> with(e, df) )
+    :(e_) => Expr(:ref, associative, Meta.quot(e) )
+    a_.b_ => Expr(:., with(a, associative), Meta.quot(b) )
+    e_ => map_expression(e, e -> with(e, associative) )
 end
 export @with
 @nonstandard with
@@ -72,7 +73,7 @@ e = Expr(:..., :a)
 """
 function replace_key(e, symbol = gensym())
     if double_match(e, :parameters, :...)
-        @chain symbol Expr(:..., _) Expr(:parameters, _)
+        @chain_line symbol Expr(:..., _) Expr(:parameters, _)
     elseif MacroTools.isexpr(e, :...)
         Expr(:..., symbol)
     else
@@ -125,7 +126,7 @@ e = Expr(:parameters, Expr(:..., :d) )
 ```
 """
 function add_key!(d, e, symbol = gensym() )
-    if @chain d haskey(_, e) !
+    if @chain_line d haskey(_, e) !
         d[e] = replace_key(e, symbol)
     end
     unparameterize( d[e] )

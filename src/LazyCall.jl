@@ -309,9 +309,9 @@ end
 
 export lazy_call
 """
-    @lazy_call(e)
+    @lazy_call(function_call)
 
-Will break apart a function call into a [`LazyCall`](@ref) object.
+Will break apart a `function_call` into a [`LazyCall`](@ref) object.
 
 # Examples
 ```julia
@@ -322,10 +322,11 @@ test_function(arguments...; keyword_arguments...) =
     collect_call(test_function, 1, 2, a = 3)
 ```
 """
-lazy_call(e) =
-    MacroTools.@match e begin
-        a_(b__) => Expr(:call, :collect_call, a, b...)
-        a_ => a
+lazy_call(function_call) =
+    MacroTools.@match function_call begin
+        outer_function_(arguments__) =>
+            Expr(:call, :collect_call, outer_function, arguments...)
+        e_ => error("`e` must be a call")
     end
 
 @nonstandard lazy_call

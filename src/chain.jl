@@ -1,22 +1,6 @@
 export link
 
 """
-    @link head tail
-
-`head[tail]`
-
-# Examples
-```julia
-v = [1, 2, 3]
-@test v[2] == @link v 2
-
-d = Dict( a => 1, b => 2)
-@test d[:a] == @link d :a
-```
-"""
-link(head, tail) = Expr(:ref, head, tail)
-
-"""
     @link head tail::Symbol
 
 Calls `head` on `tail`
@@ -26,7 +10,7 @@ Calls `head` on `tail`
 @test vcat(1) == @link 1 vcat
 ```
 """
-link(head, tail:::Symbol) = Expr(:call, tail, head)
+link(head, tail::Symbol) = Expr(:call, tail, head)
 
 """
     @link head tail::Expr
@@ -41,7 +25,7 @@ Reinterprets `\_` in `tail` as `head`.
 link(head, tail::Expr) = Expr(:let, tail, Expr(:(=), :_, head))
 
 link(head, tail::AnnotatedLine) =
-    AnnotatedLine(tail.line, link(convert(Expr, head), tail.expr) )
+    AnnotatedLine(tail.line, link(convert(Expr, head), tail.expression) )
 
 @nonstandard link
 export @link
@@ -50,7 +34,7 @@ export chain_line
 """
     @chain_line es...
 
-`reduce` `@link` over `es`
+`reduce` [`link`](@ref) over `es`
 
 # Examples
 ```julia
@@ -64,30 +48,30 @@ chain_line(es...) = foldl(link, es)
 export @chain_line
 
 """
-    @chain e
+    @chain e::Expr
 
-Separate single begin blocks out into lines and [`chain_line`](@ref) them;
-return single non-blocks. Note that dot fusion is broken by
-this macro. Instead, use [`unweave`](@ref), [`@map`](@ref), or
-[`@broadcast`](@ref).
+Separate `begin` blocks out into lines and [`chain_line`](@ref) them.
+
+`e` must be a `begin` block. Note that dot fusion is broken by this macro.
+Instead, use [`unweave`](@ref), [`@map`](@ref), or [`@broadcast`](@ref).
 
 # Examples
 ```julia
-@test 1 == @chain 1
-
 chain_block = @chain begin
     1
     vcat(_, 2)
 end
 
-@test chain_block == @chain 1 vcat(_, 2)
+@test chain_block == @chain_line 1 vcat(_, 2)
+
+@test_throws ErrorException ChainMap.chain(:(a + b))
 ```
 """
-chain(e) =
-    if MacroTools.isexpr(e, :block)
-        convert(Expr, foldl(link, annotate(e.args) )
+chain(e::Expr) =
+    if e.head == :block
+        convert(Expr, foldl(link, annotate(e.args) ) )
     else
-        e
+        error("Can only chain begin blocks")
     end
 
 @nonstandard chain

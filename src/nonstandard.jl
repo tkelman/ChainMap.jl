@@ -1,43 +1,48 @@
-function nonstandard1(f)
-  symbol_f = Symbol("@" * string(f) )
-  macro_f = Expr(:quote, Expr(:macrocall, symbol_f))
-  string_f = "See documentation of [`$f`](@ref)"
+"""
+function_call = :binary_function
+nonstandard(function_call)
+"""
+function nonstandard1(function_call::Symbol)
+  macro_symbol = Symbol("@" * string(function_call) )
+  macro_quote = Expr(:quote, Expr(:macrocall, macro_symbol))
+  doc_string = "See documentation of [`$function_call`](@ref)"
   quote
-      macro $f(args...)
-          esc($f(args...) )
+      macro $function_call(args...)
+          esc($function_call(args...) )
       end
-      @doc $string_f $macro_f
+      @doc $doc_string $macro_quote 
   end
 end
 
 export nonstandard
 """
-    @nonstandard(fs...)
+    @nonstandard(function_calls...)
 
-Will create a nonstandard evaluation macro for each of the `fs` functions.
+Will create a nonstandard evaluation macro for each of the `function_calls`.
 
 Each function should be a function that takes and returns expressions. The
-nonstandard macro will have the same name but will take in code, not
-expressions, and will evaluate the result locally when the macro is called. Will
-write a docstring for the nonstandard version pointing to the documentation of
-the standard version.
+nonstandard macro will have the same name. Will write a docstring for the
+nonstandard version pointing to the documentation of the standard version.
 
 # Examples
 ```julia
-binaryfun(a, b, c) = Expr(:call, b, a, c)
-chainback(a, b, c) = Expr(:call, c, b, a)
+nonstandard(:binary_function, :chain_back)
 
-@nonstandard binaryfun chainback
+binary_function(a, b, c) = Expr(:call, b, a, c)
+chain_back(a, b, c) = Expr(:call, c, b, a)
 
-@test vcat(1, 2) == @binaryfun 1 vcat 2
-@test vcat(3, 2) == @chainback 2 3 vcat
+@nonstandard binary_function chain_back
 
-@test "See documentation of [`binaryfun`](@ref)" ==
-    @chain (@doc @binaryfun) string chomp
+@test vcat(1, 2) == @binary_function 1 vcat 2
+@test vcat(3, 2) == @chain_back 2 3 vcat
+
+@test "See documentation of [`binary_function`](@ref)" ==
+    @chain_line (@doc @binary_function) string chomp
 
 ```
 """
-nonstandard(fs...) = Expr(:block, map(nonstandard1, fs)...)
+nonstandard(function_calls...) =
+    Expr(:block, map(nonstandard1, function_calls)...)
 
 export @nonstandard
 eval(nonstandard(:nonstandard))

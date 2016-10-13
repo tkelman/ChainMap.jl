@@ -1,11 +1,13 @@
 type AnnotatedLine
     line::Expr
-    expr
+    expression
 end
 
-function annotate(args)
-    odd_indices = 1:2:length(args)
-    args_split = [AnnotatedLine(args[i], args[i+1] ) for i in odd_indices]
+function annotate(arguments)
+    odd_indices = 1:2:length(arguments)
+    map(index -> AnnotatedLine(arguments[index], arguments[index + 1] ),
+        odd_indices)
 end
 
-Base.convert(::Type{Expr}, a::AnnotatedLine) = Expr(:block, a.line, a.expr)
+Base.convert(::Type{Expr}, a::AnnotatedLine) =
+    Expr(:block, a.line, a.expression)

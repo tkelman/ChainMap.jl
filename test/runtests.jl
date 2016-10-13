@@ -1,54 +1,46 @@
 using ChainMap
-import DataStructures
-import NullableArrays
-import DataFrames
 using Base.Test
-na =  NullableArrays.NullableArray
-a = na(["one", "two"], [false, true])
+a = ["one", "two"]
 result = @chain begin
-    Dict(:b => na([1, 2]), :c => na(["I", "II"]))
+    Dict(:b => [1, 2], :c => ["I", "II"])
     @chain_map begin
         :b
         sum
-        get
         string
         *(~a, " ", _, " ", ~:c)
     end
 end
 
-@test get(result[1]) == "one 3 I"
-@test result.isnull == [false, true]
-@test vcat(1) == @chain 1 vcat
-@test vcat(2, 1) == @chain 1 vcat(2, _)
-@test ( @chain 1 vcat(_, 2) vcat(_, 3) ) ==
-    @chain ( @chain 1 vcat(_, 2) ) vcat(_, 3)
-@test 1 == @chain 1
-
+@test result == ["one 3 I", "two 3 II"]
+@test vcat(1) == @link 1 vcat
+@test vcat(2, 1) == @link 1 vcat(2, _)
+@test ( @chain_line 1 vcat(_, 2) vcat(_, 3) ) ==
+    @link ( @link 1 vcat(_, 2) ) vcat(_, 3)
 chain_block = @chain begin
     1
     vcat(_, 2)
 end
 
-@test chain_block == @chain 1 vcat(_, 2)
+@test chain_block == @chain_line 1 vcat(_, 2)
+
+@test_throws ErrorException ChainMap.chain(:(a + b))
 lambda_function = @lambda vcat(_, 2)
 @test lambda_function(1) == vcat(1, 2)
-f = :map
-e = :(vcat(_, 1))
-lambda(f, e)
+outer_function = :map
+anonymous_function = :(vcat(_, 1))
+lambda(outer_function, anonymous_function)
 
 _ = [1, 2]
 @test map(_ -> vcat(_, 1), _) == @lambda map vcat(_, 1)
-e = :(_ + 1)
-f = :(NullableArrays.map(lift = true))
+anonymous_function = :(_ + 1)
+outer_function = :( mapreduce(*) )
 
-lambda(f, e)
+lambda(outer_function, anonymous_function)
 
-_ = NullableArrays.NullableArray([1, 2], [false, true])
+_ = [1, 2]
 
-result = @lambda NullableArrays.broadcast(lift = true) _ + 1
-
-@test result.values[1] == 2
-@test result.isnull == [false, true]
+@test mapreduce(x -> x + 1, *, [1, 2]) ==
+  @lambda mapreduce(*) _ + 1
 
 # `f` must be a call
 @test_throws ErrorException lambda(:(import ChainMap), :(_ + 1) )
@@ -139,22 +131,24 @@ test_function(arguments...; keyword_arguments...) =
 
 @test ( @lazy_call test_function(1, 2, a = 3) ) ==
     collect_call(test_function, 1, 2, a = 3)
-binaryfun(a, b, c) = Expr(:call, b, a, c)
-chainback(a, b, c) = Expr(:call, c, b, a)
+nonstandard(:binary_function, :chain_back)
 
-@nonstandard binaryfun chainback
+binary_function(a, b, c) = Expr(:call, b, a, c)
+chain_back(a, b, c) = Expr(:call, c, b, a)
 
-@test vcat(1, 2) == @binaryfun 1 vcat 2
-@test vcat(3, 2) == @chainback 2 3 vcat
+@nonstandard binary_function chain_back
 
-@test "See documentation of [`binaryfun`](@ref)" ==
-    @chain (@doc @binaryfun) string chomp
+@test vcat(1, 2) == @binary_function 1 vcat 2
+@test vcat(3, 2) == @chain_back 2 3 vcat
+
+@test "See documentation of [`binary_function`](@ref)" ==
+    @chain_line (@doc @binary_function) string chomp
 
 a = 1
-_ = DataFrames.DataFrame(a = 2)
+_ = Dict(:a => 2)
 
-@test DataFrames.DataFrame(b = _[:a] + a, c = :d) ==
-   @with DataFrames.DataFrame(b = :a + a, c = ^(:d))
+@test Dict("a" => _[:a] + a, "b" => :b) ==
+   @with Dict("a" => :a + a, "b" => ^(:b))
 e = Expr(:parameters, Expr(:..., :a) )
 first = :parameters
 second = :...
@@ -194,9 +188,6 @@ f = x -> x == :a
 @test ChainMap.negate(f)(:b)
 e = :(~_ + 1)
 ChainMap.split_anonymous(e)
-@test 1 == @unweave 1
-@test 1 == @unweave +(1)
-
 A = [1, 2]
 B = ( [5, 6], [7, 8] )
 
@@ -219,14 +210,14 @@ end
 
 @test unweave_keyword_test == keyword_test(c = 3; a... )
 
+# Must include at least one woven argument
+@test_throws ErrorException unweave(:(a + b))
+
 # Can splat no more than one positional argument
 @test_throws ErrorException unweave(:( ~(a...) + ~(b...) ))
 
 # Can splat no more than one keyword argument
 @test_throws ErrorException unweave(:( ~(;a...) + ~(;b...) ))
-@test 1 == @unweave 1 1
-@test 1 == @unweave 1 +(1)
-
 e = :(vcat(~a, ~b) )
 f = :broadcast
 unweave(f, e)
@@ -236,21 +227,25 @@ b = [3, 4]
 
 @test broadcast((a, b) -> vcat(a, b), a, b) ==
     @unweave broadcast vcat(~a, ~b)
-@test 1 == @unweave +(1) 1
-@test 1 == @unweave +(1) +(1)
+broadcast_tuple(args...; as_tuple = false) =
+    if as_tuple
+        (broadcast(args...)...)
+    else
+        broadcast(args...)
+    end
 
-e = :(~a + ~b)
-f = :(NullableArrays.broadcast(lift = true))
+e = :( vcat(~a, ~b) )
+f = :(broadcast_tuple(as_tuple = true) )
 
 unweave(f, e)
 
-a = NullableArrays.NullableArray([1, 2])
-b = NullableArrays.NullableArray([3, 4], [false, true])
+a = [1, 2]
+b = [3, 4]
 
-result = @unweave broadcast(lift = true) ~a + ~b
+result = @unweave broadcast_tuple(as_tuple = true) ~a + ~b
 
-@test result.values[1] == 4
-@test result.isnull == [false, true]
+@test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
+    @unweave broadcast_tuple(as_tuple = true) vcat(~a, ~b)
 
 # `f` must be a call
 @test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
@@ -260,21 +255,18 @@ b = [3, 4]
 @test broadcast((a, b) -> vcat(a, b), a, b) ==
     @broadcast vcat(~a, ~b)
 @test bitnot(1) == ~1
-na = NullableArrays.NullableArray
-a = na(["one", "two"], [false, true])
+a = ["one", "two"]
 result = @chain begin
-    Dict(:b => na([1, 2]), :c => na(["I", "II"]))
+    Dict(:b => [1, 2], :c => ["I", "II"])
     @chain_map begin
         :b
         sum
-        get
         string
         *(~a, " ", _, " ", ~:c)
     end
 end
 
-@test get(result[1]) == "one 3 I"
-@test result.isnull == [false, true]
+@test result == ["one 3 I", "two 3 II"]
 along() = "dummy function; could be a fancy view some day"
 
 Base.run(A::AbstractArray,

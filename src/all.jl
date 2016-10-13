@@ -1,9 +1,9 @@
 export chain_map
 """
-    @chain_map(e, v = \_)
+    @chain_map(e, associative = \_)
 
 The `@chain_map` macro combines three different macros. [`with`](@ref) annotates
-each symbol with the associative: `v`. [`chain`](@ref) chains together
+each symbol with `associative`. [`chain`](@ref) chains together
 expressions wrapped in a `begin` block. [`@broadcast`](@ref) does broadcasting
 of woven expressions.
 
@@ -23,10 +23,10 @@ end
 @test result == ["one 3 I", "two 3 II"]
 ```
 """
-chain_map(e, v = :_) = @chain begin
+chain_map(e, associative = :_) = @chain begin
     e
     chain
-    with(_, v)
+    with(_, associative)
     unweave(:broadcast, _)
 end
 

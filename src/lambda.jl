@@ -1,8 +1,10 @@
 export lambda
-"""
-    @lambda e
 
-Convert `e` to an anonymous function with `_` as the input variable.
+"""
+    @lambda anonymous_function::Expr
+
+Convert `anonymous_function` to an anonymous function with `_` as the input
+variable.
 
 # Examples
 ```julia
@@ -10,43 +12,45 @@ lambda_function = @lambda vcat(_, 2)
 @test lambda_function(1) == vcat(1, 2)
 ```
 """
-lambda(e) = Expr(:->, :_, e)
+lambda(anonymous_function::Expr) = Expr(:->, :_, anonymous_function)
 
 """
-    @lambda(f, e, v = :\_)
+    @lambda(outer_function::Symbol, anonymous_function::Expr, input = :\_)
 
-[`lambda`](@ref) `e` then call `f` on `e` and `v`.
+[`lambda`](@ref) `anonymous_function` then call `outer_function` on
+`anonymous_function` and `input`.
 
 # Examples
 ```julia
-f = :map
-e = :(vcat(_, 1))
-lambda(f, e)
+outer_function = :map
+anonymous_function = :(vcat(_, 1))
+lambda(outer_function, anonymous_function)
 
 _ = [1, 2]
 @test map(_ -> vcat(_, 1), _) == @lambda map vcat(_, 1)
 ```
 """
-lambda(f, e, v = :_) = @chain begin
-    e
-    lambda
-    Expr(:call, f, _, v)
-end
+lambda(outer_function::Symbol, anonymous_function::Expr, input = :_) =
+    @chain begin
+        anonymous_function
+        lambda
+        Expr(:call, outer_function, _, input)
+    end
 
 """
-    @lambda(f::Expr, e, v = \_)
+    @lambda(outer_function::Expr, anonymous_function::Expr, input = \_)
 
-[`lambda`](@ref) `e` then insert `e` as as the first and `v` as the last
-argument to `f`.
+[`lambda`](@ref) `anonymous_function` then insert `anonymous_function` as as the
+first and `input` as the last argument to `outer_function`.
 
-`f` must be a call.
+`outer_function` must be a call.
 
 # Examples
 ```julia
-e = :(_ + 1)
-f = :( mapreduce(*) )
+anonymous_function = :(_ + 1)
+outer_function = :( mapreduce(*) )
 
-lambda(f, e)
+lambda(outer_function, anonymous_function)
 
 _ = [1, 2]
 
@@ -57,22 +61,23 @@ _ = [1, 2]
 @test_throws ErrorException lambda(:(import ChainMap), :(_ + 1) )
 ```
 """
-lambda(f::Expr, e, v = :_) = MacroTools.@match f begin
-    function_call_(arguments__) => @chain begin
-        e
-        lambda
-        Expr(:call, function_call, _, arguments..., v)
+lambda(outer_function::Expr, anonymous_function::Expr, input = :_) =
+    MacroTools.@match outer_function begin
+        function_call_(arguments__) => @chain begin
+            anonymous_function
+            lambda
+            Expr(:call, function_call, _, arguments..., input)
+        end
+        outer_function_=> error("`outer_function` must be a call")
     end
-    f_=> error("`f` must be a call")
-end
 
 @nonstandard lambda
 export @lambda
 
 """
-    @map(e, v = \_)
+    @map(anonymous_function::Expr, input = \_)
 
-A convenience macro for [`lambda`](@ref) where `f` = `map`
+A convenience macro for [`lambda`](@ref) where `outer_function` = `map`
 
 # Examples
 ```julia
@@ -80,7 +85,7 @@ _ = [1, 2]
 @test map(_ -> vcat(_, 1), _) == @map vcat(_, 1)
 ```
 """
-macro map(e, v = :_)
-    esc(lambda(:map, e, v))
+macro map(anonymous_function, input = :_)
+    esc(lambda(:map, anonymous_function, input))
 end
 export @map
