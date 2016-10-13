@@ -1,44 +1,32 @@
 export chain
 
 """
-    @chain
-
-Error: you must chain at least one object
-
-# Examples
-```julia
-@test_throws ErrorException ChainMap.chain()
-```
-"""
-chain() = error("You must chain at least one object")
-
-"""
-    @chain head tail
+    @link head tail
 
 Calls `head` on `tail`
 
 # Examples
 ```julia
-@test vcat(1) == @chain 1 vcat
+@test vcat(1) == @link 1 vcat
 ```
 """
-chain(head, tail) = Expr(:call, tail, head)
+link(head, tail) = Expr(:call, tail, head)
 
 """
-    @chain head tail::Expr
+    @link head tail::Expr
 
 Reinterprets `\_` in `tail` as `head`. Note that dot vectorization is broken by
 this macro. Instead, use [`unweave`](@ref), [`@map`](@ref), or [`@broadcast`](@ref)
 
 # Examples
 ```julia
-@test vcat(2, 1) == @chain 1 vcat(2, _)
+@test vcat(2, 1) == @link 1 vcat(2, _)
 ```
 """
-chain(head, tail::Expr) = Expr(:let, tail, Expr(:(=), :_, head))
+link(head, tail::Expr) = Expr(:let, tail, Expr(:(=), :_, head))
 
-chain(head, tail::AnnotatedLine) =
-    AnnotatedLine(tail.line, chain(convert(Expr, head), tail.expr) )
+link(head, tail::AnnotatedLine) =
+    AnnotatedLine(tail.line, link(convert(Expr, head), tail.expr) )
 
 """
     @chain es...
