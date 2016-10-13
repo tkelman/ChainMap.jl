@@ -29,17 +29,17 @@ link(head, tail::AnnotatedLine) =
     AnnotatedLine(tail.line, link(convert(Expr, head), tail.expr) )
 
 """
-    @chain es...
+    @chain_line es...
 
 `reduce` `@chain` over `es`
 
 # Examples
 ```julia
-@test ( @chain 1 vcat(_, 2) vcat(_, 3) ) ==
-    @chain ( @chain 1 vcat(_, 2) ) vcat(_, 3)
+@test ( @chain_line 1 vcat(_, 2) vcat(_, 3) ) ==
+    @link ( @link 1 vcat(_, 2) ) vcat(_, 3)
 ```
 """
-chain(es...) = foldl(chain, es)
+chain_line(es...) = foldl(link, es)
 
 """
     @chain e
@@ -61,7 +61,7 @@ end
 """
 chain(e) =
     if MacroTools.isexpr(e, :block)
-        convert(Expr, chain(annotate(e.args)...) )
+        convert(Expr, foldl(link, annotate(e.args) )
     else
         e
     end
