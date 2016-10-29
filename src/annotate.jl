@@ -1,4 +1,4 @@
-type AnnotatedLine
+immutable AnnotatedLine
     line::Expr
     expression
 end

@@ -1,6 +1,6 @@
 export Arguments
 """
-    type Arguments
+    immutable Arguments
         positional::Tuple
         keyword::Dict{Symbol, Any}
     end
@@ -11,14 +11,14 @@ Create with [`collect_arguments`](@ref). You can also [`merge`](@ref) two
 `Arguments`, [`push`](@ref) or [`unshift`](@ref) in new
 arguments, and run with [`run`](@ref).
 """
-type Arguments
+immutable Arguments
   positional::Tuple
   keyword::Dict{Symbol, Any}
 end
 
 export LazyCall
 """
-    type LazyCall{T <: Function}
+    immutable LazyCall{T <: Function}
         arguments::Arguments
         function_call::T
     end
@@ -26,7 +26,7 @@ export LazyCall
 Will store a function along with its arguments for later use. Create
 with [`collect_call`](@ref) and run with [`run`](@ref)
 """
-type LazyCall{T <: Function}
+immutable LazyCall{T <: Function}
     arguments::Arguments
     function_call::T
 end
