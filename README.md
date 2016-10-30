@@ -100,7 +100,7 @@ fancy = @chain begin
         @lazy_call( along(1) ),
         reduce,
         +)
-    run(_)
+    run
 end
 
 boring = mapreducedim(x -> x - 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
