@@ -1,5 +1,14 @@
 using ChainMap
 using Base.Test
+e = quote
+    :b
+    sum
+    string
+    *(~a, " ", _, " ", ~:c)
+end
+
+chain_map(e)
+
 a = ["one", "two"]
 result = @chain begin
     Dict(:b => [1, 2], :c => ["I", "II"])
@@ -12,6 +21,8 @@ result = @chain begin
 end
 
 @test result == ["one 3 I", "two 3 II"]
+
+@test 1 == @chain_map 1
 @test vcat(1) == @link 1 vcat
 @test vcat(2, 1) == @link 1 vcat(2, _)
 @test ( @chain_line 1 vcat(_, 2) vcat(_, 3) ) ==
@@ -24,28 +35,6 @@ end
 @test chain_block == @chain_line 1 vcat(_, 2)
 
 @test_throws ErrorException ChainMap.chain(:(a + b))
-lambda_function = @lambda vcat(_, 2)
-@test lambda_function(1) == vcat(1, 2)
-outer_function = :map
-anonymous_function = :(vcat(_, 1))
-lambda(outer_function, anonymous_function)
-
-_ = [1, 2]
-@test map(_ -> vcat(_, 1), _) == @lambda map vcat(_, 1)
-anonymous_function = :(_ + 1)
-outer_function = :( mapreduce(*) )
-
-lambda(outer_function, anonymous_function)
-
-_ = [1, 2]
-
-@test mapreduce(x -> x + 1, *, [1, 2]) ==
-  @lambda mapreduce(*) _ + 1
-
-# `f` must be a call
-@test_throws ErrorException lambda(:(import ChainMap), :(_ + 1) )
-_ = [1, 2]
-@test map(_ -> vcat(_, 1), _) == @map vcat(_, 1)
 merge_test = @chain begin
     collect_arguments(1, a = 2, b = 3)
     merge(_, collect_arguments(4, a = 5, c = 6) )
@@ -144,6 +133,37 @@ chain_back(a, b, c) = Expr(:call, c, b, a)
 @test "See documentation of [`binary_function`](@ref)" ==
     @chain_line (@doc @binary_function) string chomp
 
+e = :(vcat(~a, ~b) )
+f = :map
+over(e, f)
+
+a = [1, 2]
+b = [3, 4]
+
+@test map((a, b) -> vcat(a, b), a, b) ==
+    @over vcat(~a, ~b)
+map_tuple(args...; as_tuple = false) =
+    if as_tuple
+        (map(args...)...)
+    else
+        map(args...)
+    end
+
+e = :( vcat(~a, ~b) )
+f = :(map_tuple(as_tuple = true) )
+
+over(e, f)
+
+a = [1, 2]
+b = [3, 4]
+
+result = @over ~a + ~b map_tuple(as_tuple = true)
+
+@test map_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
+    @over vcat(~a, ~b) map_tuple(as_tuple = true)
+
+# `f` must be a call
+@test_throws ErrorException over(:(~_ + 1), :(import ChainMap) )
 a = 1
 _ = Dict(:a => 2)
 
@@ -218,42 +238,6 @@ end
 
 # Can splat no more than one keyword argument
 @test_throws ErrorException unweave(:( ~(;a...) + ~(;b...) ))
-e = :(vcat(~a, ~b) )
-f = :broadcast
-unweave(f, e)
-
-a = [1, 2]
-b = [3, 4]
-
-@test broadcast((a, b) -> vcat(a, b), a, b) ==
-    @unweave broadcast vcat(~a, ~b)
-broadcast_tuple(args...; as_tuple = false) =
-    if as_tuple
-        (broadcast(args...)...)
-    else
-        broadcast(args...)
-    end
-
-e = :( vcat(~a, ~b) )
-f = :(broadcast_tuple(as_tuple = true) )
-
-unweave(f, e)
-
-a = [1, 2]
-b = [3, 4]
-
-result = @unweave broadcast_tuple(as_tuple = true) ~a + ~b
-
-@test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
-    @unweave broadcast_tuple(as_tuple = true) vcat(~a, ~b)
-
-# `f` must be a call
-@test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
-a = [1, 2]
-b = [3, 4]
-
-@test broadcast((a, b) -> vcat(a, b), a, b) ==
-    @broadcast vcat(~a, ~b)
 @test bitnot(1) == ~1
 a = ["one", "two"]
 result = @chain begin
@@ -285,7 +269,7 @@ fancy = @chain begin
         @lazy_call( along(1) ),
         reduce,
         +)
-    run(_)
+    run
 end
 
 boring = mapreducedim(x -> x - 1, +, reshape([1, 2, 3, 4], 2, 2), 1)

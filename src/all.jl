@@ -20,6 +20,8 @@ e = quote
     *(~a, " ", _, " ", ~:c)
 end
 
+chain_map(e)
+
 a = ["one", "two"]
 result = @chain begin
     Dict(:b => [1, 2], :c => ["I", "II"])
@@ -44,7 +46,7 @@ function chain_map(e, associative = :_)
         e = with(e, associative)
     end
     try
-        e = unweave(:broadcast, e)
+        e = over(e)
     end
     e
 end

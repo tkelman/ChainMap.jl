@@ -69,8 +69,6 @@ function split_anonymous(e::Expr)
 end
 
 export unweave
-
-
 """
     @unweave e::Expr
 
@@ -128,106 +126,9 @@ function unweave(e::Expr)
         Expr(:call, :LazyCall, _, anonymous_function)
     end
 end
-
-"""
-    @unweave f::Symbol e::Expr
-
-[`unweave`](@ref) `e` then run `f` on the component parts, anonymous function
-first.
-
-# Examples
-```julia
-e = :(vcat(~a, ~b) )
-f = :broadcast
-unweave(f, e)
-
-a = [1, 2]
-b = [3, 4]
-
-@test broadcast((a, b) -> vcat(a, b), a, b) ==
-    @unweave broadcast vcat(~a, ~b)
-```
-"""
-function unweave(f::Symbol, e::Expr)
-
-    anonymous_function, anonymous_arguments = split_anonymous(e)
-
-    Expr(:call, f, anonymous_function, anonymous_arguments...)
-
-end
-
-"""
-    @unweave f::Expr e::Expr
-
-[`unweave`](@ref) `e` then insert the function as the first argument to `f` and
-the woven arguments at the end of the arguments of `f`.
-
-If there are no woven arguments in `e`, return `e`.
-
-# Examples
-```julia
-broadcast_tuple(args...; as_tuple = false) =
-    if as_tuple
-        (broadcast(args...)...)
-    else
-        broadcast(args...)
-    end
-
-e = :( vcat(~a, ~b) )
-f = :(broadcast_tuple(as_tuple = true) )
-
-unweave(f, e)
-
-a = [1, 2]
-b = [3, 4]
-
-result = @unweave broadcast_tuple(as_tuple = true) ~a + ~b
-
-@test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
-    @unweave broadcast_tuple(as_tuple = true) vcat(~a, ~b)
-
-# `f` must be a call
-@test_throws ErrorException unweave(:(import ChainMap), :(~_ + 1) )
-```
-"""
-function unweave(f::Expr, e::Expr)
-
-    function_test = MacroTools.@capture f function_call_(arguments__)
-
-    if !(function_test)
-        error("`f` must be a call")
-    end
-
-    anonymous_function, anonymous_arguments = split_anonymous(e)
-
-    Expr(:call, function_call, anonymous_function,
-         arguments..., anonymous_arguments...)
-
-end
-
 @nonstandard unweave
 export @unweave
 
-"""
-    @broadcast e::Expr
-
-A convenience macro for [`unweave`](@ref)` where `f` = `broadcast`
-
-# Examples
-
-```julia
-a = [1, 2]
-b = [3, 4]
-
-@test broadcast((a, b) -> vcat(a, b), a, b) ==
-    @broadcast vcat(~a, ~b)
-```
-"""
-macro broadcast(e::Expr)
-    esc(unweave(:broadcast, e))
-end
-
-export @broadcast
 
 export bitnot
 """

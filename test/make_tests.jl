@@ -14,33 +14,27 @@ code_lines(file_in)
 ```
 """
 function code_lines(file_in)
-  text = readlines(file_in)
 
-  starts = @chain begin
-      text
-      @map @chain begin
-          chomp(_)
-          ismatch(r"^```.+", _)
-      end
-  end
+    text = readlines(file_in)
 
-  ends = @chain begin
-      text
-      @map @chain begin
-          chomp(_)
-          _ == "```"
-      end
-   end
+    starts = @chain_map begin
+        chomp(~text)
+        ismatch(r"^```.+", _)
+    end
 
-  Test.@test sum(starts) == sum(ends)
+    ends = @chain_map begin
+        chomp(~text)
+        _ == "```"
+    end
 
-  @chain begin
-      cumsum(starts) - cumsum(ends) .== 1
-      text[_]
-      @lambda filter !startswith(_, "```")
-      @map replace(_, r"\\", "")
-  end
+    Test.@test sum(starts) == sum(ends)
 
+    @chain begin
+        @over ~cumsum(starts) - ~cumsum(ends) == 1
+        text[_]
+        @over !startswith(~_, "```") filter
+        @over replace(~_, r"\\", "")
+    end
 end
 
 """
@@ -68,7 +62,7 @@ function make_tests(package)
         path_in
         joinpath(_, "src")
         readdir
-        @map joinpath(path_in, "src", _)
+        @over joinpath(path_in, "src", ~_)
         [_; joinpath(path_in, "README.md") ]
         map(code_lines, _)
         vcat(head_cat, _...)
