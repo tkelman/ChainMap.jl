@@ -52,7 +52,7 @@ JuliaStats/DataFramesMeta.jl.
 
 The `@chain_map` macro combines three different macros. `@with` annotates each
 symbol with the chained associative. `@chain` chains together expressions
-wrapped in a `begin` block. `@broacast` broadcasts over woven arguments.
+wrapped in a `begin` block. `@over` maps over woven arguments.
 
 ```julia
 a = ["one", "two"]
