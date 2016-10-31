@@ -9,10 +9,10 @@ map_expression(e, f) = e
 map_expression(e::Expr, f) = Expr(f(e.head), map(f, e.args)...)
 
 """
-    @with(e, associative = \_)
+    @with(e)
 
-Extract any symbols in `e`, such as `:a`, from `associative`, e.g.
-`associative[:a]`.
+Extract any symbols in `e`, such as `:a`, from `_`, e.g.
+`_[:a]`.
 
 Anything wrapped in `^`, such as `^(escaped)`, gets passed through untouched.
 
@@ -25,10 +25,10 @@ _ = Dict(:a => 2)
    @with Dict("a" => :a + a, "b" => ^(:b))
 ```
 """
-with(e, associative = :_) = MacroTools.@match e begin
+with(e) = MacroTools.@match e begin
     ^(e_) => e
-    :(e_) => Expr(:ref, associative, Meta.quot(e) )
-    a_.b_ => Expr(:., with(a, associative), Meta.quot(b) )
-    e_ => map_expression(e, e -> with(e, associative) )
+    :(e_) => Expr(:ref, :_, Meta.quot(e) )
+    a_.b_ => Expr(:., with(a, :_), Meta.quot(b) )
+    e_ => map_expression(e, e -> with(e, :_) )
 end
 @nonstandard with

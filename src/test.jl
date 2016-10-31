@@ -1,5 +1,3 @@
-export make_tests
-
 """
     code_lines(file_in)
 
@@ -45,7 +43,7 @@ Populates your runtest.jl file with all of the julia code in your docstrings.
 
 # Examples
 ```julia
-make_tests("ChainMap")
+ChainMap.make_tests("ChainMap")
 ```
 """
 make_tests(package) = @chain begin

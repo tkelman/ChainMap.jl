@@ -43,8 +43,6 @@ link(head, tail::AnnotatedLine) =
 
 @nonstandard link
 
-export dead_ends
-
 """
     const dead_ends
 
@@ -110,11 +108,10 @@ Within each block, lines are reduced with `link`. `link` has two behaviors.
 It will call bare functions on the result of the previous line. It will
 reinterpret `_` within expressions as the result of the previous line.
 
-Cannot chain blocks with expression heads in [`dead_ends`](@ref) (expressions
-with no return). They will be skipped; however, blocks inside these blocks
-will still be `chain`ed. Type definitions will not be chained nor recurred
-into. Adding an extraneous assignment such as `no_chain = true` can
-prevent unintended chaining.
+Cannot chain blocks with expressions that return no output
+`[function, =, export, import, =>]`. They will be skipped; however, blocks
+inside these blocks will still be `chain`ed. Type definitions will not be
+chained nor recurred into.
 
 Like all macros, difficulty might result if you define a macro inside `@chain`.
 You can not export from within blocks. Docstrings will not be registered within

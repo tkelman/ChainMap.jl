@@ -48,8 +48,6 @@ JuliaStats/DataFramesMeta.jl.
 [pkg-0.5_image]: http://pkg.julialang.org/badges/ChainMap_0.5.svg
 [pkg-0.5_url]: http://pkg.julialang.org/?pkg=ChainMap
 
-## Example 1: `@chain_map`
-
 The `@chain` will search through your code and chain eligible blocks. `@with` annotates each symbol with the chained associative. `@over` maps over woven arguments.
 
 ```julia
