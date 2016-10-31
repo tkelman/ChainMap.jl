@@ -1,5 +1,5 @@
 export Arguments, LazyCall, push, unshift, collect_arguments, run, lazy_call,
-@lazy_call, collect_cal
+@lazy_call, collect_call
 
 @chain begin
 
