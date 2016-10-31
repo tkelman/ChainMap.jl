@@ -3,11 +3,8 @@ import MacroTools
 import DataStructures
 
 include("nonstandard.jl")
-include("annotate.jl")
 include("chain.jl")
-include("LazyCall.jl")
-include("recursive.jl")
-include("unweave.jl")
+include("with.jl")
 include("over.jl")
 include("test.jl")
 
