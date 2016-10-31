@@ -1,4 +1,4 @@
-@recur_chain begin
+@chain begin
 
 """
 # Examples

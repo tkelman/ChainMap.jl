@@ -50,23 +50,24 @@ JuliaStats/DataFramesMeta.jl.
 
 ## Example 1: `@chain_map`
 
-The `@chain_map` macro combines three different macros. `@with` annotates each
-symbol with the chained associative. `@chain` chains together expressions
-wrapped in a `begin` block. `@over` maps over woven arguments.
+The `@chain` will search through your code and chain eligible blocks. `@with` annotates each symbol with the chained associative. `@over` maps over woven arguments.
 
 ```julia
-a = ["one", "two"]
-result = @chain begin
-    Dict(:b => [1, 2], :c => ["I", "II"])
-    @chain_map begin
-        :b
-        sum
-        string
-        *(~a, " ", _, " ", ~:c)
-    end
-end
+@chain begin
+    a = ["one", "two"]
 
-@test result == ["one 3 I", "two 3 II"]
+    result = begin
+        Dict(:b => [1, 2], :c => ["I", "II"])
+        @over @with begin
+            :b
+            sum
+            string
+            *(~a, " ", _, " ", ~:c)
+        end
+    end
+
+    @test result == ["one 3 I", "two 3 II"]
+end
 ```
 
 ## Example 2: Collecting arguments
@@ -88,20 +89,24 @@ Base.run(A::AbstractArray,
 Test it out!
 
 ```julia
-fancy = @chain begin
-    [1, 2, 3, 4]
-    reshape(_, 2, 2)
-    collect_arguments(
-        _,
-        map,
-        _ -> -(_, 1),
-        @lazy_call( along(1) ),
-        reduce,
-        +)
-    run
+@chain begin
+
+    fancy = begin
+        [1, 2, 3, 4]
+        reshape(_, 2, 2)
+        collect_arguments(
+            _,
+            map,
+            _ -> -(_, 1),
+            @lazy_call( along(1) ),
+            reduce,
+            +)
+        run
+    end
+
+    boring = mapreducedim(x -> x - 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
+
+    @test fancy == boring
+
 end
-
-boring = mapreducedim(x -> x - 1, +, reshape([1, 2, 3, 4], 2, 2), 1)
-
-@test fancy == boring
 ```

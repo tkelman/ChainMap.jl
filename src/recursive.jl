@@ -1,4 +1,4 @@
- @recur_chain begin
+ @chain begin
 
 """
     map_expression(e, f)
@@ -75,7 +75,11 @@ e = Expr(:..., :a)
 """
 replace_key(e, symbol = gensym() ) = begin
     if double_match(e, :parameters, :...)
-        @chain_line symbol Expr(:..., _) Expr(:parameters, _)
+        begin
+            symbol
+            Expr(:..., _)
+            Expr(:parameters, _)
+        end
     elseif MacroTools.isexpr(e, :...)
         Expr(:..., symbol)
     else

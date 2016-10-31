@@ -1,5 +1,3 @@
-export link
-
 """
     @link head tail::Symbol
 
@@ -7,7 +5,7 @@ Calls `head` on `tail`
 
 # Examples
 ```julia
-@test vcat(1) == @link 1 vcat
+@test vcat(1) == ChainMap.@link 1 vcat
 ```
 """
 link(head, tail::Symbol) = Expr(:call, tail, head)
@@ -19,7 +17,7 @@ Reinterprets `\_` in `tail` as `head`.
 
 # Examples
 ```julia
-@test vcat(2, 1) == @link 1 vcat(2, _)
+@test vcat(2, 1) == ChainMap.@link 1 vcat(2, _)
 ```
 """
 link(head, tail::Expr) = Expr(:let, tail, Expr(:(=), :_, head ) )
@@ -30,42 +28,25 @@ link(head, tail::AnnotatedLine) =
         link(convert(Expr, head), tail.expression) )
 
 @nonstandard link
-export @link
-
-export chain_line
-"""
-    @chain_line es...
-
-`reduce` [`link`](@ref) over `es`
-
-# Examples
-```julia
-@test ( @chain_line 1 vcat(_, 2) vcat(_, 3) ) ==
-    @link ( @link 1 vcat(_, 2) ) vcat(_, 3)
-```
-"""
-chain_line(es...) = foldl(link, es)
-
-@nonstandard chain_line
-export @chain_line
 
 export dead_ends
-"""
-    function, =>, =, export, import, type
-"""
-dead_ends(e) = false
-dead_ends(e::Expr) = e.head in [:function, :(=>), :(=), :export, :import, :type]
 
-export chain
 """
-    @chain e::Expr
+    const dead_ends
+
+A vector of expression types with no return.
+"""
+const dead_ends = [:function, :(=>), :(=), :export, :import, :type]
+
+is_dead_end(e) = false
+is_dead_end(e::Expr) = e.head in dead_ends
+
+"""
+    @chain_block e::Expr
 
 Separate `begin` blocks out into lines and [`chain_line`](@ref) them.
 
-`e` must be a `begin` block. Note that dot fusion is broken by this macro.
-Instead, use [`unweave`](@ref), [`@map`](@ref), or [`@broadcast`](@ref).
-All lines must be calls. Cannot chain block with expression heads in
-[`dead_ends`](@ref)
+`e` must be a `begin` block.
 
 # Examples
 ```julia
@@ -74,34 +55,85 @@ e = quote
     vcat(_, 2)
 end
 
-chain(e)
+ChainMap.chain_block(e)
 
-chain_block = @chain begin
+a_block = ChainMap.@chain_block begin
     1
     vcat(_, 2)
 end
 
-@test chain_block == @chain_line 1 vcat(_, 2)
+@test a_block == vcat(1, 2)
 
 # Can only chain begin blocks
-@test_throws ErrorException ChainMap.chain(:(a + b))
+@test_throws ErrorException ChainMap.chain_block(:(a + b))
 
 # Cannot chain assignments, functions, or =>
-@test_throws ErrorException ChainMap.chain(quote
+@test_throws ErrorException ChainMap.chain_block(quote
     a = 1
     2
 end)
 ```
 """
-chain(e::Expr) =
+chain_block(e::Expr) =
     if e.head == :block
-        if any( dead_ends.(e.args) )
-            error("Cannot chain dead_ends")
+        if any( is_dead_end.(e.args) )
+            error("Cannot chain_block dead_ends")
         end
         convert(Expr, foldl(link, annotate(e.args) ) )
     else
-        error("Can only chain begin blocks")
+        error("Can only chain_block begin blocks")
     end
+
+@nonstandard chain_block
+
+export chain
+"""
+    @chain(e)
+
+Will `chain` all eligible block in your code, recursively.
+
+Within each block, lines are reduced with `link`. `link` has two behaviors.
+It will call bare functions on the result of the previous line. It will
+reinterpret `_` within expressions as the result of the previous line.
+
+Cannot chain blocks with expression heads in [`dead_ends`](@ref) (expressions
+with no return). They will be skipped; however, blocks inside these blocks
+will still be `chain`ed. Type definitions will not be chained nor recurred
+into. Adding an extraneous assignment such as `no_chain = true` can
+prevent unintended chaining.
+
+```julia
+@chain begin
+
+    test = begin
+        begin
+            1
+            vcat(2, _)
+        end
+        vcat(_, begin
+            2
+            vcat(3, _)
+        end)
+        vcat(3, _)
+    end
+
+    @test test == vcat(3, vcat(vcat(2, 1), vcat(3, 2) ) )
+
+end
+```
+"""
+chain(e) = e
+chain(e::Expr) = begin
+    if e.head == :type
+        return e
+    end
+    e_new = Expr(e.head, map(chain, e.args)...)
+    try
+        chain_block(e_new)
+    catch
+        e_new
+    end
+end
 
 @nonstandard chain
 export @chain

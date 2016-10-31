@@ -10,7 +10,7 @@ function nonstandard1(function_call::Symbol)
       macro $function_call(args...)
           esc($function_call(args...) )
       end
-      @doc $doc_string $macro_quote 
+      @doc $doc_string $macro_quote
   end
 end
 
@@ -26,18 +26,25 @@ nonstandard version pointing to the documentation of the standard version.
 
 # Examples
 ```julia
-nonstandard(:binary_function, :chain_back)
+@chain begin
 
-binary_function(a, b, c) = Expr(:call, b, a, c)
-chain_back(a, b, c) = Expr(:call, c, b, a)
+    nonstandard(:binary_function, :chain_back)
 
-@nonstandard binary_function chain_back
+    binary_function(a, b, c) = Expr(:call, b, a, c)
+    chain_back(a, b, c) = Expr(:call, c, b, a)
 
-@test vcat(1, 2) == @binary_function 1 vcat 2
-@test vcat(3, 2) == @chain_back 2 3 vcat
+    @nonstandard binary_function chain_back
 
-@test "See documentation of [`binary_function`](@ref)" ==
-    @chain_line (@doc @binary_function) string chomp
+    @test vcat(1, 2) == @binary_function 1 vcat 2
+    @test vcat(3, 2) == @chain_back 2 3 vcat
+
+    @test "See documentation of [`binary_function`](@ref)" == begin
+        (@doc @binary_function)
+        string
+        chomp
+    end
+
+end
 
 ```
 """
