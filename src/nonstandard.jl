@@ -38,11 +38,13 @@ nonstandard version pointing to the documentation of the standard version.
     @test vcat(1, 2) == @binary_function 1 vcat 2
     @test vcat(3, 2) == @chain_back 2 3 vcat
 
-    @test "See documentation of [`binary_function`](@ref)" == begin
+    new_doc_string = begin
         (@doc @binary_function)
         string
         chomp
     end
+
+    @test new_doc_string == "See documentation of [`binary_function`](@ref)"
 
 end
 

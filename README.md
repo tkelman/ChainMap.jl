@@ -58,7 +58,7 @@ The `@chain` will search through your code and chain eligible blocks. `@with` an
 
     result = begin
         Dict(:b => [1, 2], :c => ["I", "II"])
-        @over @with begin
+        @with @over begin
             :b
             sum
             string

@@ -138,11 +138,13 @@ test_function(arguments...; keyword_arguments...) =
     @test vcat(1, 2) == @binary_function 1 vcat 2
     @test vcat(3, 2) == @chain_back 2 3 vcat
 
-    @test "See documentation of [`binary_function`](@ref)" == begin
+    new_doc_string = begin
         (@doc @binary_function)
         string
         chomp
     end
+
+    @test new_doc_string == "See documentation of [`binary_function`](@ref)"
 
 end
 
@@ -261,7 +263,7 @@ end
 
     result = begin
         Dict(:b => [1, 2], :c => ["I", "II"])
-        @over @with begin
+        @with @over begin
             :b
             sum
             string
