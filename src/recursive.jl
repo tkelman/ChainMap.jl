@@ -1,7 +1,5 @@
 export with, @with
 
-@chain begin
-
 """
     map_expression(e, f)
 
@@ -73,7 +71,7 @@ e = Expr(:..., :a)
 @test ChainMap.replace_key(:a, :b) == :b
 ```
 """
-replace_key(e, symbol = gensym() ) = begin
+replace_key(e, symbol = gensym() ) = @chain begin
     if double_match(e, :parameters, :...)
         begin
             symbol
@@ -131,7 +129,7 @@ e = Expr(:parameters, Expr(:..., :d) )
 @test d[e] == Expr(:parameters, Expr(:..., :z) )
 ```
 """
-add_key!(d, e, symbol = gensym() ) = begin
+add_key!(d, e, symbol = gensym() ) = @chain begin
     if begin
         d
         haskey(_, e)
@@ -156,5 +154,3 @@ replace_record!(e, d) =
         ~(e_) => add_key!(d, e)
         e_ => map_expression(e, e -> replace_record!(e, d) )
     end
-
-end

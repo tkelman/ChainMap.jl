@@ -1,7 +1,5 @@
 export make_tests
 
-@chain begin
-
 """
     code_lines(file_in)
 
@@ -13,7 +11,7 @@ file_in = joinpath(Pkg.dir(), "ChainMap", "src", "chain.jl")
 ChainMap.code_lines(file_in)
 ```
 """
-function code_lines(file_in)
+code_lines(file_in) = @chain begin
 
     text = readlines(file_in)
 
@@ -50,7 +48,7 @@ Populates your runtest.jl file with all of the julia code in your docstrings.
 make_tests("ChainMap")
 ```
 """
-function make_tests(package)
+make_tests(package) = @chain begin
 
     path_in = joinpath(Pkg.dir(), package)
     head_cat = *("using ", package, "\nusing Base.Test\n")
@@ -65,6 +63,5 @@ function make_tests(package)
         vcat(head_cat, _...)
         write(joinpath(path_in, "test", "generated_tests.jl"), _)
     end
-end
 
 end

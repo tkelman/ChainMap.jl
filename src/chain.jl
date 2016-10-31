@@ -103,7 +103,8 @@ into. Adding an extraneous assignment such as `no_chain = true` can
 prevent unintended chaining.
 
 Like all macros, difficulty might result if you define a macro inside `@chain`.
-You can not export from within blocks.
+You can not export from within blocks. Docstrings will not be registered within
+blocks.
 
 ```julia
 @chain begin

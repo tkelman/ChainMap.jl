@@ -1,8 +1,6 @@
 export Arguments, LazyCall, push, unshift, collect_arguments, run, lazy_call,
 @lazy_call, collect_call
 
-@chain begin
-
 """
     immutable Arguments
         positional::Tuple
@@ -77,7 +75,7 @@ end
 @test merge_test == [[1, 3], [2, 4]]
 ```
 """
-Base.merge(lazycall::LazyCall, arguments::Arguments) = begin
+Base.merge(lazycall::LazyCall, arguments::Arguments) = @chain begin
     lazycall.arguments
     merge(_, arguments)
     LazyCall(_, lazycall.function_call)
@@ -102,7 +100,7 @@ end
 @test push_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
 ```
 """
-push(a::Arguments, positional...; keyword...) = begin
+push(a::Arguments, positional...; keyword...) = @chain begin
     keyword
     Dict
     Arguments(positional, _)
@@ -127,7 +125,7 @@ end
 @test push_test == [[1, 3], [2, 4]]
 ```
 """
-push(lazycall::LazyCall, positional...; keyword...) = begin
+push(lazycall::LazyCall, positional...; keyword...) = @chain begin
     lazycall.arguments
     push(_, positional...; keyword...)
     LazyCall(_, lazycall.function_call)
@@ -150,7 +148,7 @@ end
 @test unshift_test == collect_arguments(1, 2, a = 3)
 ```
 """
-unshift(a::Arguments, positional...) = begin
+unshift(a::Arguments, positional...) = @chain begin
     positional
     Arguments(_, Dict() )
     merge(_, a)
@@ -173,7 +171,7 @@ end
 @test unshift_test == [[1, 3], [2, 4]]
 ```
 """
-unshift(lazycall::LazyCall, positional...) = begin
+unshift(lazycall::LazyCall, positional...) = @chain begin
     lazycall.arguments
     unshift(_, positional...)
     LazyCall(_, lazycall.function_call)
@@ -191,7 +189,7 @@ a = collect_arguments(1, 2, a = 3, b = 4)
 @test a.keyword == Dict{Symbol, Any}(:a => 3, :b => 4)
 ```
 """
-collect_arguments(positional...; keyword...) = begin
+collect_arguments(positional...; keyword...) = @chain begin
     keyword
     Dict
     Arguments(positional, _)
@@ -209,7 +207,7 @@ l = collect_call(vcat, [1, 2], [3, 4])
 @test l.arguments == collect_arguments([1, 2], [3, 4])
 ```
 """
-collect_call(f, positional...; keyword...) = begin
+collect_call(f, positional...; keyword...) = @chain begin
     keyword
     Dict
     Arguments(positional, _)
@@ -298,7 +296,7 @@ end
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(l::LazyCall, f::Function) = begin
+Base.run(l::LazyCall, f::Function) = @chain begin
     l.arguments
     unshift(_, l.function_call)
     run(_, f)
@@ -326,5 +324,3 @@ lazy_call(function_call) =
     end
 
 @nonstandard lazy_call
-
-end

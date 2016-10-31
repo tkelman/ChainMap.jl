@@ -1,7 +1,5 @@
 export unweave, @unweave, bitnot
 
-@chain begin
-
 """
 # Examples
 ```julia
@@ -11,7 +9,7 @@ f = x -> x == :a
 """
 negate(f) = (args...; kwargs...) -> !(f(args...; kwargs...))
 
-function dots_to_back(o::DataStructures.OrderedDict)
+dots_to_back(o::DataStructures.OrderedDict) = @chain begin
     is_dots = (k, v) -> MacroTools.isexpr(k, :...)
     to_back = filter(is_dots, o)
     if length(to_back) > 1
@@ -24,7 +22,7 @@ function dots_to_back(o::DataStructures.OrderedDict)
     end
 end
 
-function parameters_to_front(o::DataStructures.OrderedDict)
+parameters_to_front(o::DataStructures.OrderedDict) = @chain begin
     is_parameters = (k, v) -> double_match(k, :parameters, :...)
     to_front = filter(is_parameters, o)
     if length(to_front) > 1
@@ -47,7 +45,7 @@ e = :(~_ + 1)
 ChainMap.split_anonymous(e)
 ```
 """
-function split_anonymous(e::Expr)
+split_anonymous(e::Expr) = @chain begin
     d = Dict()
     e_replace = replace_record!(e, d)
 
@@ -120,7 +118,7 @@ end
 @test_throws ErrorException unweave(:( ~(;a...) + ~(;b...) ))
 ```
 """
-function unweave(e::Expr)
+unweave(e::Expr) = @chain begin
     anonymous_function, arguments = split_anonymous(e)
 
     begin
@@ -142,5 +140,3 @@ Alias for `~` for use within [`@unweave`](@ref)
 ```
 """
 bitnot = ~
-
-end
