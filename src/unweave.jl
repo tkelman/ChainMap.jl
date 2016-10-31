@@ -1,3 +1,5 @@
+export unweave, @unweave, bitnot
+
 @chain begin
 
 """
@@ -70,7 +72,6 @@ function split_anonymous(e::Expr)
     (anonymous_function, keys(d_reorder))
 end
 
-export unweave
 """
     @unweave e::Expr
 
@@ -129,10 +130,7 @@ function unweave(e::Expr)
     end
 end
 @nonstandard unweave
-export @unweave
 
-
-export bitnot
 """
     bitnot
 

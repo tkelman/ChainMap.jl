@@ -102,7 +102,8 @@ will still be `chain`ed. Type definitions will not be chained nor recurred
 into. Adding an extraneous assignment such as `no_chain = true` can
 prevent unintended chaining.
 
-Like all macros, difficulty might result if you define a macro inside `@chain`
+Like all macros, difficulty might result if you define a macro inside `@chain`.
+You can not export from within blocks.
 
 ```julia
 @chain begin

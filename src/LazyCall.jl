@@ -1,6 +1,8 @@
+export Arguments, LazyCall, push, unshift, collect_arguments, run, lazy_call,
+@lazy_call
+
 @chain begin
 
-export Arguments
 """
     immutable Arguments
         positional::Tuple
@@ -18,7 +20,6 @@ immutable Arguments
   keyword::Dict{Symbol, Any}
 end
 
-export LazyCall
 """
     immutable LazyCall{T <: Function}
         arguments::Arguments
@@ -82,7 +83,6 @@ Base.merge(lazycall::LazyCall, arguments::Arguments) = begin
     LazyCall(_, lazycall.function_call)
 end
 
-export push
 """
     push(arguments::Arguments, positional...; keyword...)
 
@@ -133,7 +133,6 @@ push(lazycall::LazyCall, positional...; keyword...) = begin
     LazyCall(_, lazycall.function_call)
 end
 
-export unshift
 """
     unshift(arguments::Arguments, positional...)
 
@@ -180,7 +179,6 @@ unshift(lazycall::LazyCall, positional...) = begin
     LazyCall(_, lazycall.function_call)
 end
 
-export collect_arguments
 """
     collect_arguments(positional...; keyword...)
 
@@ -199,7 +197,6 @@ collect_arguments(positional...; keyword...) = begin
     Arguments(positional, _)
 end
 
-export collect_call
 """
     collect_call(f::Function, positional...; keyword...)
 
@@ -227,7 +224,6 @@ import Base.==
 ==(a::LazyCall, b::LazyCall) =
     (a.function_call == b.function_call) && (a.arguments == b.arguments)
 
-export run
 """
      run(a::Arguments)
 
@@ -308,7 +304,6 @@ Base.run(l::LazyCall, f::Function) = begin
     run(_, f)
 end
 
-export lazy_call
 """
     @lazy_call(function_call)
 
@@ -331,6 +326,5 @@ lazy_call(function_call) =
     end
 
 @nonstandard lazy_call
-export @lazy_call
 
 end

@@ -1,3 +1,5 @@
+export make_tests
+
 @chain begin
 
 """

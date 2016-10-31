@@ -1,4 +1,6 @@
- @chain begin
+export with, @with
+
+@chain begin
 
 """
     map_expression(e, f)
@@ -8,7 +10,6 @@ If `e` is an expression, map `f` over the arguments in `e`.
 map_expression(e, f) = e
 map_expression(e::Expr, f) = Expr(f(e.head), map(f, e.args)...)
 
-export with
 """
     @with(e, associative = \_)
 
@@ -32,7 +33,6 @@ with(e, associative = :_) = MacroTools.@match e begin
     a_.b_ => Expr(:., with(a, associative), Meta.quot(b) )
     e_ => map_expression(e, e -> with(e, associative) )
 end
-export @with
 @nonstandard with
 
 """
