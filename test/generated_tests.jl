@@ -126,28 +126,23 @@ test_function(arguments...; keyword_arguments...) =
 
 @test ( @lazy_call test_function(1, 2, a = 3) ) ==
     collect_call(test_function, 1, 2, a = 3)
-@chain begin
+nonstandard(:binary_function, :chain_back)
 
-    nonstandard(:binary_function, :chain_back)
+binary_function(a, b, c) = Expr(:call, b, a, c)
+chain_back(a, b, c) = Expr(:call, c, b, a)
 
-    binary_function(a, b, c) = Expr(:call, b, a, c)
-    chain_back(a, b, c) = Expr(:call, c, b, a)
+@nonstandard binary_function chain_back
 
-    @nonstandard binary_function chain_back
+@test vcat(1, 2) == @binary_function 1 vcat 2
+@test vcat(3, 2) == @chain_back 2 3 vcat
 
-    @test vcat(1, 2) == @binary_function 1 vcat 2
-    @test vcat(3, 2) == @chain_back 2 3 vcat
-
-    new_doc_string = begin
-        (@doc @binary_function)
-        string
-        chomp
-    end
-
-    @test new_doc_string == "See documentation of [`binary_function`](@ref)"
-
+new_doc_string = @chain begin
+    (@doc @binary_function)
+    string
+    chomp
 end
 
+@test new_doc_string == "See documentation of [`binary_function`](@ref)"
 e = :( vcat(~a, ~b) )
 f = :broadcast
 over(e, f)
