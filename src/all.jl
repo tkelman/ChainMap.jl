@@ -1,3 +1,5 @@
+@recur_chain begin
+
 export chain_map
 """
     @chain_map(e, associative = \_)
@@ -38,12 +40,13 @@ end
 @test 1 == @chain_map 1
 ```
 """
-function chain_map(e, associative = :_)
+chain_map(e) = begin
+    no_chain = true
     try
         e = chain(e)
     end
     try
-        e = with(e, associative)
+        e = with(e)
     end
     try
         e = over(e)
@@ -53,3 +56,5 @@ end
 
 @nonstandard chain_map
 export @chain_map
+
+end

@@ -1,3 +1,5 @@
+ @recur_chain begin
+
 """
     map_expression(e, f)
 
@@ -71,7 +73,7 @@ e = Expr(:..., :a)
 @test ChainMap.replace_key(:a, :b) == :b
 ```
 """
-function replace_key(e, symbol = gensym())
+replace_key(e, symbol = gensym() ) = begin
     if double_match(e, :parameters, :...)
         @chain_line symbol Expr(:..., _) Expr(:parameters, _)
     elseif MacroTools.isexpr(e, :...)
@@ -125,8 +127,12 @@ e = Expr(:parameters, Expr(:..., :d) )
 @test d[e] == Expr(:parameters, Expr(:..., :z) )
 ```
 """
-function add_key!(d, e, symbol = gensym() )
-    if @chain_line d haskey(_, e) !
+add_key!(d, e, symbol = gensym() ) = begin
+    if begin
+        d
+        haskey(_, e)
+        !
+    end
         d[e] = replace_key(e, symbol)
     end
     unparameterize( d[e] )
@@ -146,3 +152,5 @@ replace_record!(e, d) =
         ~(e_) => add_key!(d, e)
         e_ => map_expression(e, e -> replace_record!(e, d) )
     end
+
+end

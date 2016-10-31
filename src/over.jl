@@ -1,3 +1,5 @@
+@recur_chain begin
+
 export over
 """
     @over(e::Expr, f::Symbol = broadcast)
@@ -77,3 +79,5 @@ end
 
 @nonstandard over
 export @over
+
+end

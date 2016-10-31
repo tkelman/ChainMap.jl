@@ -1,3 +1,5 @@
+@recur_chain begin
+
 """
 # Examples
 ```julia
@@ -13,7 +15,7 @@ function dots_to_back(o::DataStructures.OrderedDict)
     if length(to_back) > 1
         error("Can splat no more than one positional argument")
     end
-    @chain begin
+    begin
         o
         filter(negate(is_dots), _)
         merge(_, to_back)
@@ -26,7 +28,7 @@ function parameters_to_front(o::DataStructures.OrderedDict)
     if length(to_front) > 1
         error("Can splat no more than one keyword argument")
     end
-    @chain begin
+    begin
         o
         filter(negate(is_parameters), _)
         merge(to_front, _)
@@ -51,14 +53,14 @@ function split_anonymous(e::Expr)
         error("Must include at least one woven argument")
     end
 
-    d_reorder = @chain begin
+    d_reorder = begin
         d
         DataStructures.OrderedDict(_)
         parameters_to_front
         dots_to_back
     end
 
-    anonymous_function = @chain begin
+    anonymous_function = begin
         d_reorder
         values
         Expr(:tuple, _...)
@@ -120,7 +122,7 @@ end
 function unweave(e::Expr)
     anonymous_function, arguments = split_anonymous(e)
 
-    @chain begin
+    begin
         arguments
         Expr(:call, :collect_arguments, _...)
         Expr(:call, :LazyCall, _, anonymous_function)
@@ -142,3 +144,5 @@ Alias for `~` for use within [`@unweave`](@ref)
 ```
 """
 bitnot = ~
+
+end

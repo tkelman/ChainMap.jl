@@ -1,3 +1,5 @@
+@recur_chain begin
+
 export Arguments
 """
     immutable Arguments
@@ -59,7 +61,7 @@ end
 """
     merge(lazy_call::LazyCall, arguments::Arguments)
 
-`merge` `arguments` into the `arguments` of `lazy_call`.
+`merge` `arguments` into the `arguments` of `lazycall`.
 
 # Examples
 ```julia
@@ -74,10 +76,10 @@ end
 @test merge_test == [[1, 3], [2, 4]]
 ```
 """
-Base.merge(lazy_call::LazyCall, arguments::Arguments) = @chain begin
-    lazy_call.arguments
+Base.merge(lazycall::LazyCall, arguments::Arguments) = begin
+    lazycall.arguments
     merge(_, arguments)
-    LazyCall(_, lazy_call.function_call)
+    LazyCall(_, lazycall.function_call)
 end
 
 export push
@@ -100,18 +102,17 @@ end
 @test push_test == collect_arguments(1, 4, a = 5, b = 3, c = 6)
 ```
 """
-push(a::Arguments, positional...; keyword...) =
-  @chain begin
-      keyword
-      Dict
-      Arguments(positional, _)
-      merge(a, _)
-  end
+push(a::Arguments, positional...; keyword...) = begin
+    keyword
+    Dict
+    Arguments(positional, _)
+    merge(a, _)
+end
 
 """
-    push(lazy_call::LazyCall, positional...; keyword...)
+    push(lazycall::LazyCall, positional...; keyword...)
 
-`push` to `lazy_call.arguments`.
+`push` to `lazycall.arguments`.
 
 # Examples
 ```julia
@@ -126,10 +127,10 @@ end
 @test push_test == [[1, 3], [2, 4]]
 ```
 """
-push(lazy_call::LazyCall, positional...; keyword...) = @chain begin
-    lazy_call.arguments
+push(lazycall::LazyCall, positional...; keyword...) = begin
+    lazycall.arguments
     push(_, positional...; keyword...)
-    LazyCall(_, lazy_call.function_call)
+    LazyCall(_, lazycall.function_call)
 end
 
 export unshift
@@ -150,16 +151,16 @@ end
 @test unshift_test == collect_arguments(1, 2, a = 3)
 ```
 """
-unshift(a::Arguments, positional...) = @chain begin
+unshift(a::Arguments, positional...) = begin
     positional
     Arguments(_, Dict() )
     merge(_, a)
 end
 
 """
-    unshift(lazy_call::LazyCall, positional...)
+    unshift(lazycall::LazyCall, positional...)
 
-`unshift` to `lazy_call.arguments`.
+`unshift` to `lazycall.arguments`.
 
 # Examples
 ```julia
@@ -173,10 +174,10 @@ end
 @test unshift_test == [[1, 3], [2, 4]]
 ```
 """
-unshift(lazy_call::LazyCall, positional...) = @chain begin
-    lazy_call.arguments
+unshift(lazycall::LazyCall, positional...) = begin
+    lazycall.arguments
     unshift(_, positional...)
-    LazyCall(_, lazy_call.function_call)
+    LazyCall(_, lazycall.function_call)
 end
 
 export collect_arguments
@@ -192,7 +193,7 @@ a = collect_arguments(1, 2, a = 3, b = 4)
 @test a.keyword == Dict{Symbol, Any}(:a => 3, :b => 4)
 ```
 """
-collect_arguments(positional...; keyword...) = @chain begin
+collect_arguments(positional...; keyword...) = begin
     keyword
     Dict
     Arguments(positional, _)
@@ -211,7 +212,7 @@ l = collect_call(vcat, [1, 2], [3, 4])
 @test l.arguments == collect_arguments([1, 2], [3, 4])
 ```
 """
-collect_call(f, positional...; keyword...) = @chain begin
+collect_call(f, positional...; keyword...) = begin
     keyword
     Dict
     Arguments(positional, _)
@@ -301,7 +302,7 @@ end
 @test run_test == map(vcat, [1, 2], [3, 4])
 ```
 """
-Base.run(l::LazyCall, f::Function) = @chain begin
+Base.run(l::LazyCall, f::Function) = begin
     l.arguments
     unshift(_, l.function_call)
     run(_, f)
@@ -331,3 +332,5 @@ lazy_call(function_call) =
 
 @nonstandard lazy_call
 export @lazy_call
+
+end
