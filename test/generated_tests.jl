@@ -129,7 +129,7 @@ b = [3, 4]
 file_in = joinpath(Pkg.dir(), "ChainMap", "src", "chain.jl")
 
 ChainMap.code_lines(file_in)
-make_tests("ChainMap")
+ChainMap.make_tests("ChainMap")
 a = 1
 _ = Dict(:a => 2)
 

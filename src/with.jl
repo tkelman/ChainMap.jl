@@ -28,7 +28,7 @@ _ = Dict(:a => 2)
 with(e) = MacroTools.@match e begin
     ^(e_) => e
     :(e_) => Expr(:ref, :_, Meta.quot(e) )
-    a_.b_ => Expr(:., with(a, :_), Meta.quot(b) )
-    e_ => map_expression(e, e -> with(e, :_) )
+    a_.b_ => Expr(:., with(a), Meta.quot(b) )
+    e_ => map_expression(e, with)
 end
 @nonstandard with
