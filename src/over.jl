@@ -56,7 +56,7 @@ Remove `;` from `e`.
 
 #Examples
 ```julia
-e = Expr(:parameters, a)
+e = Expr(:parameters, :a)
 e = :b
 ```
 """

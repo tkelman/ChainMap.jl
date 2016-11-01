@@ -1,3 +1,5 @@
+export @chain
+
 immutable AnnotatedLine
     line::Expr
     expression

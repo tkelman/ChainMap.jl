@@ -44,7 +44,7 @@ e = Expr(:..., :a)
 @test ChainMap.replace_key(e, :b) == Expr(:..., :b)
 
 @test ChainMap.replace_key(:a, :b) == :b
-e = Expr(:parameters, a)
+e = Expr(:parameters, :a)
 e = :b
 e = :a
 symbol = :z
