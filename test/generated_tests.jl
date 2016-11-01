@@ -78,6 +78,17 @@ b = [3, 4]
 @test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
     @over vcat(~a, ~b) broadcast_tuple(as_tuple = true)
 
+A = [1, 2]
+B = ( [5, 6], [7, 8] )
+@test vcat.(A, [3, 4], B...) ==
+    @over vcat(~A, ~[3, 4], ~(B...) )
+
+# Must include at least one woven argument
+@test_throws ErrorException ChainMap.over(:(a + b) )
+# Can splat no more than one positional argument
+@test_throws ErrorException ChainMap.over(:( ~(a...) + ~(b...) ) )
+# Can splat no more than one keyword argument
+@test_throws ErrorException ChainMap.over(:( ~(;a...) + ~(;b...) ) )
 # `f` must be a call
 @test_throws ErrorException ChainMap.over(:(~_ + 1), :(import ChainMap) )
 file_in = joinpath(Pkg.dir(), "ChainMap", "src", "chain.jl")
