@@ -27,12 +27,7 @@ Replace `e` with `gensym()`.
 #Examples
 ```julia
 e = Expr(:parameters, Expr(:..., :a) )
-@test ChainMap.replace_key(e, :b) == Expr(:parameters, Expr(:..., :b) )
-
 e = Expr(:..., :a)
-@test ChainMap.replace_key(e, :b) == Expr(:..., :b)
-
-@test ChainMap.replace_key(:a, :b) == :b
 ```
 """
 replace_key(e, symbol = gensym() ) = @chain begin
