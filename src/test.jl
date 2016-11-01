@@ -33,7 +33,6 @@ code_lines(file_in) = @chain begin
     end
 end
 
-export make_tests
 """
     make_tests(package::AbstractString)
 

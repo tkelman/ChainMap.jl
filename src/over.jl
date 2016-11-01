@@ -1,4 +1,4 @@
-export over, @over
+export @over
 
 """
     double_match(e, first, second)
@@ -10,9 +10,6 @@ Test whether `e` calls `first`, and the first argument calls `second`
 e = Expr(:parameters, Expr(:..., :a) )
 first = :parameters
 second = :...
-
-@test ChainMap.double_match(e, first, second)
-@test !ChainMap.double_match(:b, :parameters, :...)
 ```
 """
 double_match(e, first, second) =
@@ -59,11 +56,8 @@ Remove `;` from `e`.
 
 #Examples
 ```julia
-a = Expr(:..., :a)
-
-@test ChainMap.unparameterize(Expr(:parameters, a) ) == a
-
-@test ChainMap.unparameterize(:b) == :b
+e = Expr(:parameters, a)
+e = :b
 ```
 """
 unparameterize(e) =
@@ -85,15 +79,7 @@ e = :a
 symbol = :z
 d = Dict(:a => :b, :(a + 1) => :(b + 1))
 
-ChainMap.add_key!(d, e, symbol)
-@test d[:a] == :b
-
-ChainMap.add_key!(d, :c, symbol)
-@test d[:c] == :z
-
 e = Expr(:parameters, Expr(:..., :d) )
-@test ChainMap.add_key!(d, e, symbol) == Expr(:..., :z)
-@test d[e] == Expr(:parameters, Expr(:..., :z) )
 ```
 """
 add_key!(d, e, symbol = gensym() ) = @chain begin
@@ -112,8 +98,6 @@ end
 ```julia
 d = Dict()
 e = :( 1 + ~(a))
-ChainMap.replace_record!(e, d)
-@test :a in keys(d)
 ```
 """
 replace_record!(e, d) =
@@ -126,7 +110,6 @@ replace_record!(e, d) =
 # Examples
 ```julia
 f = x -> x == :a
-@test ChainMap.negate(f)(:b)
 ```
 """
 negate(f) = (args...; kwargs...) -> !(f(args...; kwargs...))
@@ -162,7 +145,6 @@ end
 
 ```julia
 e = :(~_ + 1)
-ChainMap.split_anonymous(e)
 ```
 """
 split_anonymous(e::Expr) = @chain begin
@@ -191,6 +173,37 @@ split_anonymous(e::Expr) = @chain begin
 end
 
 """
+```julia
+e = :( vcat(~a, ~b) )
+f = :broadcast
+```
+"""
+over(e::Expr, f::Symbol = :broadcast) = begin
+    anonymous_function, anonymous_arguments = split_anonymous(e)
+    Expr(:call, f, anonymous_function, anonymous_arguments...)
+end
+
+"""
+```julia
+e = :( vcat(~a, ~b) )
+f = :(broadcast_tuple(as_tuple = true) )
+```
+"""
+over(e::Expr, f::Expr) = begin
+    function_test = MacroTools.@capture f function_call_(arguments__)
+
+    if !(function_test)
+        error("`f` must be a call")
+    end
+
+    anonymous_function, anonymous_arguments = split_anonymous(e)
+
+    Expr(:call, function_call, anonymous_function,
+         arguments..., anonymous_arguments...)
+
+end
+
+"""
     @over(e::Expr, f = :broadcast)
 
 Split `e` into an anonymous function and arguments, then insert the function
@@ -206,10 +219,6 @@ an alias.
 
 # Examples
 ```julia
-e = :( vcat(~a, ~b) )
-f = :broadcast
-over(e, f)
-
 a = [1, 2]
 b = [3, 4]
 
@@ -223,37 +232,16 @@ broadcast_tuple(args...; as_tuple = false) =
         broadcast(args...)
     end
 
-e = :( vcat(~a, ~b) )
-f = :(broadcast_tuple(as_tuple = true) )
-over(e, f)
-
 a = [1, 2]
 b = [3, 4]
 
 @test broadcast_tuple( (a, b) -> vcat(a, b), a, b, as_tuple = true) ==
-@over vcat(~a, ~b) broadcast_tuple(as_tuple = true)
+    @over vcat(~a, ~b) broadcast_tuple(as_tuple = true)
 
 # `f` must be a call
-@test_throws ErrorException over(:(~_ + 1), :(import ChainMap) )
+@test_throws ErrorException ChainMap.over(:(~_ + 1), :(import ChainMap) )
 ```
 """
-over(e::Expr, f::Symbol = :broadcast) = begin
-    anonymous_function, anonymous_arguments = split_anonymous(e)
-    Expr(:call, f, anonymous_function, anonymous_arguments...)
+macro over(e...)
+    esc(over(e...))
 end
-
-over(e::Expr, f::Expr) = begin
-    function_test = MacroTools.@capture f function_call_(arguments__)
-
-    if !(function_test)
-        error("`f` must be a call")
-    end
-
-    anonymous_function, anonymous_arguments = split_anonymous(e)
-
-    Expr(:call, function_call, anonymous_function,
-         arguments..., anonymous_arguments...)
-
-end
-
-@nonstandard over

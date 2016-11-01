@@ -1,12 +1,11 @@
-export with, @with
+export @with
 
-"""
-    map_expression(e, f)
-
-If `e` is an expression, map `f` over the arguments in `e`.
-"""
-map_expression(e, f) = e
-map_expression(e::Expr, f) = Expr(f(e.head), map(f, e.args)...)
+with(e) = MacroTools.@match e begin
+    ^(e_) => e
+    :(e_) => Expr(:ref, :_, Meta.quot(e) )
+    a_.b_ => Expr(:., with(a), Meta.quot(b) )
+    e_ => map_expression(e, with)
+end
 
 """
     @with(e)
@@ -25,10 +24,6 @@ _ = Dict(:a => 2)
    @with Dict("a" => :a + a, "b" => ^(:b))
 ```
 """
-with(e) = MacroTools.@match e begin
-    ^(e_) => e
-    :(e_) => Expr(:ref, :_, Meta.quot(e) )
-    a_.b_ => Expr(:., with(a), Meta.quot(b) )
-    e_ => map_expression(e, with)
+macro with(e...)
+    esc(with(e...) )
 end
-@nonstandard with

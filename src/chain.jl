@@ -19,7 +19,8 @@ Calls `head` on `tail`
 
 # Examples
 ```julia
-@test vcat(1) == ChainMap.@link 1 vcat
+head = 1
+tail = :vcat
 ```
 """
 link(head, tail::Symbol) = Expr(:call, tail, head)
@@ -31,7 +32,8 @@ Reinterprets `\_` in `tail` as `head`.
 
 # Examples
 ```julia
-@test vcat(2, 1) == ChainMap.@link 1 vcat(2, _)
+head = 1
+tail = :( vcat(2, _) )
 ```
 """
 link(head, tail::Expr) = Expr(:let, tail, Expr(:(=), :_, head ) )
@@ -41,10 +43,8 @@ link(head, tail::AnnotatedLine) =
         tail.line,
         link(convert(Expr, head), tail.expression) )
 
-@nonstandard link
-
 """
-    const dead_ends
+    constant dead_ends
 
 A vector of expression types with no return.
 """
@@ -56,9 +56,7 @@ is_dead_end(e::Expr) = e.head in dead_ends
 """
     @chain_block e::Expr
 
-Separate `begin` blocks out into lines and [`chain_line`](@ref) them.
-
-`e` must be a `begin` block.
+Separate `begin` blocks out into lines and reduce [`link`](@ref) over them.
 
 # Examples
 ```julia
@@ -66,39 +64,39 @@ e = quote
     1
     vcat(_, 2)
 end
-
-ChainMap.chain_block(e)
-
-a_block = ChainMap.@chain_block begin
-    1
-    vcat(_, 2)
-end
-
-@test a_block == vcat(1, 2)
-
-# Can only chain begin blocks
-@test_throws ErrorException ChainMap.chain_block(:(a + b))
-
-# Cannot chain assignments, functions, or =>
-@test_throws ErrorException ChainMap.chain_block(quote
-    a = 1
-    2
-end)
 ```
 """
-chain_block(e::Expr) =
-    if e.head == :block
-        if any( is_dead_end.(e.args) )
-            error("Cannot chain_block dead_ends")
-        end
-        convert(Expr, foldl(link, annotate(e.args) ) )
+chain_block(e::Expr) = convert(Expr, foldl(link, annotate(e.args) ) )
+
+"""
+```julia
+e = quote
+    begin
+        1
+        vcat(2, _)
+    end
+    vcat(_, begin
+        2
+        vcat(3, _)
+    end)
+    vcat(3, _)
+end
+```
+"""
+chain(e) = e
+chain(e::Expr) =
+    if e.head == :type
+        e
     else
-        error("Can only chain_block begin blocks")
+        e_chained_arguments = map_expression(e, chain)
+
+        if e.head == :block && !any( is_dead_end.(e.args) )
+            chain_block(e_chained_arguments)
+        else
+            e_chained_arguments
+        end
     end
 
-@nonstandard chain_block
-
-export chain
 """
     @chain(e)
 
@@ -119,7 +117,6 @@ blocks.
 
 ```julia
 @chain begin
-
     test = begin
         begin
             1
@@ -133,22 +130,9 @@ blocks.
     end
 
     @test test == vcat(3, vcat(vcat(2, 1), vcat(3, 2) ) )
-
 end
 ```
 """
-chain(e) = e
-chain(e::Expr) = begin
-    if e.head == :type
-        return e
-    end
-    e_new = Expr(e.head, map(chain, e.args)...)
-    try
-        chain_block(e_new)
-    catch
-        e_new
-    end
+macro chain(e...)
+    esc( chain(e...) )
 end
-
-@nonstandard chain
-export @chain
